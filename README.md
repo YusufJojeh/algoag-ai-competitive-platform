@@ -108,6 +108,15 @@ npm run test:all
 | `OLLAMA_URL` | عنوان Ollama (افتراضي: http://localhost:11434) |
 | `OLLAMA_MODEL` | اسم النموذج (افتراضي: llama3.2) |
 
+## رفع المشروع إلى GitHub
+
+المشروع جاهز لـ Git. لرفعه إلى GitHub انظر [GITHUB.md](GITHUB.md).
+
+```bash
+git remote add origin https://github.com/YOUR_USERNAME/YOUR_REPO.git
+git push -u origin main
+```
+
 ## ترخيص
 
 MIT
