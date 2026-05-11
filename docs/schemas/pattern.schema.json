@@ -1,0 +1,118 @@
+{
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "$id": "https://algoag.local/schemas/pattern.schema.json",
+    "title": "AlgoAG Pattern manifest",
+    "type": "object",
+    "additionalProperties": false,
+    "required": ["schema_version", "pattern_id", "status"],
+    "properties": {
+        "schema_version": {
+            "type": "integer",
+            "minimum": 1
+        },
+        "pattern_id": {
+            "type": "string",
+            "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+        },
+        "status": {
+            "type": "string",
+            "enum": ["draft", "review", "published", "deprecated"]
+        },
+        "title": {
+            "type": "object",
+            "additionalProperties": { "type": "string", "minLength": 1 },
+            "propertyNames": { "pattern": "^[a-z]{2}(-[A-Z]{2})?$" },
+            "minProperties": 1
+        },
+        "summary": {
+            "type": "object",
+            "additionalProperties": { "type": "string" },
+            "propertyNames": { "pattern": "^[a-z]{2}(-[A-Z]{2})?$" }
+        },
+        "when_to_use": {
+            "type": "object",
+            "additionalProperties": { "type": "string", "minLength": 1 },
+            "propertyNames": { "pattern": "^[a-z]{2}(-[A-Z]{2})?$" }
+        },
+        "when_not_to_use": {
+            "type": "object",
+            "additionalProperties": { "type": "string", "minLength": 1 },
+            "propertyNames": { "pattern": "^[a-z]{2}(-[A-Z]{2})?$" }
+        },
+        "statement_signals": {
+            "type": "object",
+            "additionalProperties": { "type": "string", "minLength": 1 },
+            "propertyNames": { "pattern": "^[a-z]{2}(-[A-Z]{2})?$" }
+        },
+        "related_techniques": {
+            "type": "array",
+            "items": { "type": "string", "minLength": 1 }
+        },
+        "related_pattern_ids": {
+            "type": "array",
+            "items": {
+                "type": "string",
+                "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+            }
+        },
+        "representative_problem_refs": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": ["pattern_slug", "problem_slug"],
+                "properties": {
+                    "pattern_slug": {
+                        "type": "string",
+                        "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+                    },
+                    "problem_slug": {
+                        "type": "string",
+                        "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+                    }
+                }
+            }
+        },
+        "benchmark_key": {
+            "type": "string",
+            "enum": [
+                "sorting",
+                "search",
+                "divide_conquer",
+                "binary_search",
+                "graph_bfs",
+                "graph_dfs",
+                "dynamic_programming",
+                "greedy",
+                "two_pointers",
+                "sliding_window",
+                "hash_map",
+                "heap",
+                "backtracking"
+            ]
+        },
+        "ollama_matching": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+                "keywords": {
+                    "type": "array",
+                    "items": { "type": "string", "minLength": 1 }
+                },
+                "negative_keywords": {
+                    "type": "array",
+                    "items": { "type": "string", "minLength": 1 }
+                },
+                "notes": {
+                    "type": "object",
+                    "additionalProperties": { "type": "string" },
+                    "propertyNames": { "pattern": "^[a-z]{2}(-[A-Z]{2})?$" }
+                }
+            }
+        },
+        "analytics_tags": {
+            "type": "array",
+            "items": { "type": "string", "minLength": 1 }
+        }
+    }
+}

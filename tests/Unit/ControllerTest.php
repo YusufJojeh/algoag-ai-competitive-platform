@@ -4,6 +4,9 @@ namespace Tests\Unit;
 
 use App\Http\Controllers\AlgorithmAssistantController;
 use App\Http\Controllers\Controller;
+use App\Modules\Assistant\Actions\RunBenchmarkWorkflowAction;
+use App\Modules\Assistant\Actions\SuggestAlgorithmsAction;
+use App\Services\OllamaService;
 use Tests\TestCase;
 
 class ControllerTest extends TestCase
@@ -16,8 +19,9 @@ class ControllerTest extends TestCase
     public function test_algorithm_assistant_controller_extends_controller(): void
     {
         $this->assertInstanceOf(Controller::class, new AlgorithmAssistantController(
-            app(\App\Services\OllamaService::class),
-            app(\App\Services\BenchmarkRunner::class)
+            app(OllamaService::class),
+            app(SuggestAlgorithmsAction::class),
+            app(RunBenchmarkWorkflowAction::class)
         ));
     }
 }

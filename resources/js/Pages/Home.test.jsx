@@ -5,6 +5,7 @@ import Home from './Home';
 const mockUsePage = vi.fn();
 const mockUseForm = vi.fn();
 const mockPost = vi.fn();
+const mockLogoutPost = vi.fn();
 const mockLink = ({ href, children, ...rest }) => <a href={href} {...rest}>{children}</a>;
 
 vi.mock('@inertiajs/react', () => ({
@@ -29,16 +30,29 @@ describe('Home', () => {
             props: {
                 ollamaAvailable: true,
                 recentSessions: [],
+                recentCodeforces: [],
                 flash: null,
+                auth: { user: { id: 1, name: 'Test', email: 't@t.com' } },
             },
         });
-        mockUseForm.mockImplementation((data = { problem: '' }) => ({
-            data: { problem: data.problem ?? '' },
-            setData: vi.fn((key, value) => {}),
-            post: mockPost,
-            processing: false,
-            errors: {},
-        }));
+        mockUseForm.mockImplementation((initial = {}) => {
+            if (initial && Object.prototype.hasOwnProperty.call(initial, 'problem')) {
+                return {
+                    data: { problem: initial.problem ?? '' },
+                    setData: vi.fn(),
+                    post: mockPost,
+                    processing: false,
+                    errors: {},
+                };
+            }
+            return {
+                data: {},
+                setData: vi.fn(),
+                post: mockLogoutPost,
+                processing: false,
+                errors: {},
+            };
+        });
     });
 
     it('renders header and form', () => {
@@ -48,17 +62,71 @@ describe('Home', () => {
         expect(screen.getByRole('button', { name: /اقترح خوارزميات/ })).toBeInTheDocument();
     });
 
+    it('shows Codeforces solver link in header', () => {
+        render(<Home />);
+        const link = screen.getByRole('link', { name: /حل Codeforces/ });
+        expect(link).toHaveAttribute('href', '/solve');
+    });
+
     it('shows ollama warning when ollamaAvailable is false', () => {
         mockUsePage.mockReturnValue({
-            props: { ollamaAvailable: false, recentSessions: [], flash: null },
+            props: { ollamaAvailable: false, recentSessions: [], recentCodeforces: [], flash: null },
         });
         render(<Home />);
         expect(screen.getByText(/Ollama غير متصل/)).toBeInTheDocument();
     });
 
+    it('renders recent Codeforces solutions when provided', () => {
+        mockUsePage.mockReturnValue({
+            props: {
+                ollamaAvailable: true,
+                recentSessions: [],
+                recentCodeforces: [
+                    { id: 10, problem_preview: 'Max in array', status: 'completed', created_at: 'منذ دقيقتين' },
+                ],
+                flash: null,
+            },
+        });
+        render(<Home />);
+        expect(screen.getByText('آخر حلول Codeforces')).toBeInTheDocument();
+        expect(screen.getByText('Max in array')).toBeInTheDocument();
+        expect(screen.getByRole('link', { name: /Max in array/ })).toHaveAttribute('href', '/solve/result/10');
+        expect(screen.getByText('مكتمل')).toBeInTheDocument();
+    });
+
+    it('shows failed status for Codeforces solution', () => {
+        mockUsePage.mockReturnValue({
+            props: {
+                ollamaAvailable: true,
+                recentSessions: [],
+                recentCodeforces: [
+                    { id: 11, problem_preview: 'Failed problem', status: 'failed', created_at: 'الآن' },
+                ],
+                flash: null,
+            },
+        });
+        render(<Home />);
+        expect(screen.getByText('فشل')).toBeInTheDocument();
+    });
+
+    it('shows processing status for Codeforces solution', () => {
+        mockUsePage.mockReturnValue({
+            props: {
+                ollamaAvailable: true,
+                recentSessions: [],
+                recentCodeforces: [
+                    { id: 12, problem_preview: 'Running', status: 'processing', created_at: 'الآن' },
+                ],
+                flash: null,
+            },
+        });
+        render(<Home />);
+        expect(screen.getByText('قيد المعالجة')).toBeInTheDocument();
+    });
+
     it('shows flash message when present', () => {
         mockUsePage.mockReturnValue({
-            props: { ollamaAvailable: true, recentSessions: [], flash: { message: 'تم الحفظ.' } },
+            props: { ollamaAvailable: true, recentSessions: [], recentCodeforces: [], flash: { message: 'تم الحفظ.' } },
         });
         render(<Home />);
         expect(screen.getByText('تم الحفظ.')).toBeInTheDocument();
@@ -91,11 +159,12 @@ describe('Home', () => {
                 recentSessions: [
                     { id: 1, problem_preview: 'Sort array', recommendation_preview: 'Use quicksort', created_at: 'منذ ساعة' },
                 ],
+                recentCodeforces: [],
                 flash: null,
             },
         });
         render(<Home />);
-        expect(screen.getByText('آخر الجلسات')).toBeInTheDocument();
+        expect(screen.getByText(/آخر الجلسات/)).toBeInTheDocument();
         expect(screen.getByText('Sort array')).toBeInTheDocument();
         const link = screen.getByRole('link', { name: /Sort array/ });
         expect(link).toHaveAttribute('href', '/session/1');
@@ -139,13 +208,21 @@ describe('Home', () => {
 
     it('does not render recent sessions section when recentSessions is empty array', () => {
         mockUsePage.mockReturnValue({
-            props: { ollamaAvailable: true, recentSessions: [], flash: null },
+            props: { ollamaAvailable: true, recentSessions: [], recentCodeforces: [], flash: null },
         });
         render(<Home />);
         expect(screen.queryByText('آخر الجلسات')).not.toBeInTheDocument();
     });
 
-    it('handles undefined recentSessions gracefully', () => {
+    it('does not render recent Codeforces section when recentCodeforces is empty', () => {
+        mockUsePage.mockReturnValue({
+            props: { ollamaAvailable: true, recentSessions: [], recentCodeforces: [], flash: null },
+        });
+        render(<Home />);
+        expect(screen.queryByText('آخر حلول Codeforces')).not.toBeInTheDocument();
+    });
+
+    it('handles undefined recentSessions and recentCodeforces gracefully', () => {
         mockUsePage.mockReturnValue({
             props: { ollamaAvailable: true, flash: null },
         });
@@ -176,6 +253,7 @@ describe('Home', () => {
                 recentSessions: [
                     { id: 2, problem_preview: 'Only problem', recommendation_preview: null, created_at: 'الآن' },
                 ],
+                recentCodeforces: [],
                 flash: null,
             },
         });
@@ -215,7 +293,7 @@ describe('Home', () => {
 
     it('does not render flash div when flash is undefined', () => {
         mockUsePage.mockReturnValue({
-            props: { ollamaAvailable: true, recentSessions: [] },
+            props: { ollamaAvailable: true, recentSessions: [], recentCodeforces: [] },
         });
         render(<Home />);
         expect(screen.queryByText('تم الحفظ.')).not.toBeInTheDocument();

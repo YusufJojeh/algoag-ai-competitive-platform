@@ -61,7 +61,7 @@ describe('Results', () => {
     it('renders link to new problem', () => {
         render(<Results />);
         const link = screen.getByRole('link', { name: /مسألة جديدة/ });
-        expect(link).toHaveAttribute('href', '/');
+        expect(link).toHaveAttribute('href', '/assistant');
     });
 
     it('renders when benchmarkResults is empty object', () => {

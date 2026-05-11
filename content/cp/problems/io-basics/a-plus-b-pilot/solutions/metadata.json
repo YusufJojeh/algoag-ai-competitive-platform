@@ -1,0 +1,27 @@
+{
+    "schema_version": 1,
+    "bundle_id": "reference",
+    "status": "verified",
+    "artifacts": [
+        {
+            "solution_id": "cpp",
+            "language": "cpp",
+            "path": "solution.cpp",
+            "entry_file": "solution.cpp",
+            "role": "source",
+            "status": "verified"
+        },
+        {
+            "solution_id": "python",
+            "language": "python",
+            "path": "solution.py",
+            "entry_file": "solution.py",
+            "role": "source",
+            "status": "verified"
+        }
+    ],
+    "verified_against_suite": {
+        "suite_id": "default",
+        "content_hash": "pilot0000000000000000000000000000000000000000000000000000000000000000"
+    }
+}

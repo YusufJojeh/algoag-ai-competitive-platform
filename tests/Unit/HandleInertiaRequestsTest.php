@@ -32,5 +32,8 @@ class HandleInertiaRequestsTest extends TestCase
         $request = Request::create('/');
         $shared = $middleware->share($request);
         $this->assertIsArray($shared);
+        $this->assertArrayHasKey('auth', $shared);
+        $this->assertIsArray($shared['auth']);
+        $this->assertArrayHasKey('user', $shared['auth']);
     }
 }

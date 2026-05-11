@@ -1,12 +1,14 @@
 # مساعد تصميم الخوارزميات مع محاكاة الأداء
 
-نظام يساعدك على اختيار النهج الخوارزمي الأنسب: **يفهم المسألة → يقترح خوارزميات → يجرّبها → يقارنها → ينصحك بأفضل حل**.
+نظام يساعدك على اختيار النهج الخوارزمي الأنسب: **يفهم المسألة → يقترح خوارزميات → يجرّبها → يقارنها → ينصحك بأفضل حل**. يتضمن أيضاً **حلّال نصوص مسائل أسلوب Codeforces** (عبر Ollama في الخلفية)، و**بنك مسائل ومسارات وإرسالات** (واجهة أساسية مع حكم تجريبي بدون تنفيذ معزول).
 
 ## التقنيات
 
 - **Backend:** Laravel 12  
 - **Frontend:** React + Inertia.js  
 - **AI:** Ollama (محلي)
+- **مصادقة:** جلسات Laravel (تسجيل / دخول / خروج)
+- **طوابير:** دعم `QUEUE_CONNECTION=database` لمعالجة حل Codeforces في الخلفية
 
 ## المتطلبات
 
@@ -25,12 +27,18 @@ composer install
 copy .env.example .env
 php artisan key:generate
 
-# 3. تثبيت حزم الواجهة
+# 3. قاعدة البيانات والبيانات الأولية (مسائل/مسارات/مستخدم تجريبي)
+php artisan migrate
+php artisan db:seed
+
+# 4. تثبيت حزم الواجهة
 npm install
 
-# 4. بناء الواجهة (أو استخدم npm run dev أثناء التطوير)
+# 5. بناء الواجهة (أو استخدم npm run dev أثناء التطوير)
 npm run build
 ```
+
+**مستخدم تجريبي (بعد seed):** البريد `demo@example.com` وكلمة المرور `password`.
 
 ## تشغيل Ollama
 
@@ -51,55 +59,50 @@ php artisan serve
 npm run dev
 ```
 
-ثم افتح: [http://localhost:8000](http://localhost:8000)
+ثم افتح: [http://localhost:8000](http://localhost:8000) — ستُوجَّه لتسجيل الدخول إن لم تكن مسجّلاً.
+
+## طابور المهام (حل Codeforces)
+
+- افتراضياً في `.env.example`: `QUEUE_CONNECTION=sync` (تنفيذ بعد إرسال الاستجابة في نفس العملية).
+- للإنتاج أو لتفريغ طلبات HTTP بسرعة: عيّن `QUEUE_CONNECTION=database`، نفّذ `php artisan migrate` (جدول `jobs`)، وشغّل:
+
+```bash
+php artisan queue:work
+```
 
 ## سير العمل
 
-1. **الصفحة الرئيسية:** اكتب وصف المسألة (مثلاً: بحث في مصفوفة مرتبة، ترتيب عناصر، أقصر مسار...).
-2. **اقتراح خوارزميات:** الضغط على "اقترح خوارزميات" يرسل الوصف إلى Ollama ويعرض خوارزميات مقترحة مع التعقيد الزمني والذاكري.
-3. **محاكاة الأداء:** الضغط على "تشغيل محاكاة الأداء" يشغّل تنفيذاً فعلياً لخوارزميات مقابلة (في PHP) ويقيس الوقت والذاكرة.
-4. **التوصية:** يتم إرسال النتائج إلى Ollama للحصول على توصية نهائية مبنية على السرعة والذاكرة وقابلية التوسع.
-5. **السجل:** كل جلسة (بعد المحاكاة) تُحفظ تلقائياً في SQLite ويمكنك فتحها من قسم "آخر الجلسات" في الصفحة الرئيسية.
+1. **تسجيل الدخول أو إنشاء حساب** — الجلسات وحلول Codeforces مرتبطة بالمستخدم.
+2. **الصفحة الرئيسية:** اكتب وصف المسألة ثم **اقترح خوارزميات** (Ollama).
+3. **محاكاة الأداء:** تشغيل مقاييس PHP محلية ومقارنة النتائج.
+4. **التوصية:** Ollama يلخّص التوصية؛ تُحفظ الجلسة في `algorithm_sessions`.
+5. **حل Codeforces:** من الرابط في الرأس — لصق نص المسألة؛ تُصفّ الطلبات في **Job** وتُحدَّث الصفحة تلقائياً عند الانتهاء.
+6. **بنك المسائل / المسارات / إرسالاتي:** روابط في الرأس؛ الإرسال يُسجَّل مع **حكم تجريبي** (لا تنفيذ كود معزول).
 
 ## قاعدة البيانات (SQLite)
 
-المشروع يستخدم SQLite لحفظ جلسات التحليل. الجدول `algorithm_sessions` يُنشأ تلقائياً عند تشغيل:
+- جداول رئيسية: `users`, `algorithm_sessions`, `codeforces_solutions`, `jobs` (للطابور)، `tags`, `problems`, `problem_tag`, `courses`, `lessons`, `submissions`.
+- ملف SQLite: `database/database.sqlite`
 
-```bash
-php artisan migrate
-```
-
-ملف قاعدة البيانات: `database/database.sqlite` (يُنشأ تلقائياً إن لم يكن موجوداً).
-
-## الاختبارات (تغطية كاملة)
+## الاختبارات
 
 ### Backend (PHPUnit)
-- **Unit:** `OllamaService`, `BenchmarkRunner`, `AlgorithmSession`
-- **Feature:** المسارات والتحكم (Home, Suggest, Benchmark, Show Session) مع محاكاة Ollama عبر `Http::fake()`
 
 ```bash
 php artisan test
 ```
 
-لتقرير التغطية (يتطلب PCOV أو Xdebug):
-```bash
-php artisan test --coverage
-```
-
-### Frontend (Vitest + React Testing Library)
-- تغطية صفحات React: `Home`, `Suggestions`, `Results` (عزل مع mock لـ Inertia)
+### Frontend (Vitest)
 
 ```bash
 npm run test
-npm run test:coverage
 ```
 
-### تشغيل كل الاختبارات
+### الكل
+
 ```bash
 npm run test:all
 ```
-
-(يشغّل `npm run test` ثم `php artisan test`.)
 
 ## الإعدادات (`.env`)
 
@@ -107,15 +110,11 @@ npm run test:all
 |--------|--------|
 | `OLLAMA_URL` | عنوان Ollama (افتراضي: http://localhost:11434) |
 | `OLLAMA_MODEL` | اسم النموذج (افتراضي: llama3.2) |
+| `QUEUE_CONNECTION` | `sync` أو `database` (مع `php artisan queue:work`) |
 
 ## رفع المشروع إلى GitHub
 
-المشروع جاهز لـ Git. لرفعه إلى GitHub انظر [GITHUB.md](GITHUB.md).
-
-```bash
-git remote add origin https://github.com/YOUR_USERNAME/YOUR_REPO.git
-git push -u origin main
-```
+انظر [GITHUB.md](GITHUB.md).
 
 ## ترخيص
 

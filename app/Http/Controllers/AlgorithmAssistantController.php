@@ -2,45 +2,79 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\BenchmarkRunRequest;
+use App\Http\Requests\SuggestProblemRequest;
 use App\Models\AlgorithmSession;
-use App\Services\BenchmarkRunner;
+use App\Models\CodeforcesSolution;
+use App\Modules\Assistant\Actions\RunBenchmarkWorkflowAction;
+use App\Modules\Assistant\Actions\SuggestAlgorithmsAction;
 use App\Services\OllamaService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Str;
 use Inertia\Inertia;
+use Inertia\Response;
 
 class AlgorithmAssistantController extends Controller
 {
     public function __construct(
         protected OllamaService $ollama,
-        protected BenchmarkRunner $benchmarks
+        protected SuggestAlgorithmsAction $suggestAlgorithms,
+        protected RunBenchmarkWorkflowAction $benchmarkWorkflow
     ) {}
 
     /**
      * Main page: describe problem and get suggestions.
      */
-    public function index(Request $request)
+    public function index(Request $request): Response
     {
         $ollamaAvailable = $this->ollama->isAvailable();
         $recentSessions = [];
         try {
             $recentSessions = AlgorithmSession::query()
+                ->where('user_id', $request->user()?->id)
                 ->latest()
                 ->take(10)
                 ->get(['id', 'problem', 'recommendation', 'created_at'])
                 ->map(fn ($s) => [
                     'id' => $s->id,
-                    'problem_preview' => \Illuminate\Support\Str::limit($s->problem, 80),
-                    'recommendation_preview' => $s->recommendation ? \Illuminate\Support\Str::limit($s->recommendation, 100) : null,
+                    'problem_preview' => Str::limit($s->problem, 80),
+                    'recommendation_preview' => $s->recommendation ? Str::limit($s->recommendation, 100) : null,
                     'created_at' => $s->created_at->diffForHumans(),
                 ])
                 ->all();
         } catch (\Throwable $e) {
-            // Table may not exist yet
+            Log::warning('algorithm_sessions list failed', [
+                'user_id' => $request->user()?->id,
+                'message' => $e->getMessage(),
+            ]);
+        }
+
+        $recentCodeforces = [];
+        try {
+            $recentCodeforces = CodeforcesSolution::query()
+                ->where('user_id', $request->user()?->id)
+                ->latest()
+                ->take(5)
+                ->get(['id', 'problem_text', 'status', 'created_at'])
+                ->map(fn ($s) => [
+                    'id' => $s->id,
+                    'problem_preview' => Str::limit($s->problem_text, 80),
+                    'status' => $s->status,
+                    'created_at' => $s->created_at->diffForHumans(),
+                ])
+                ->all();
+        } catch (\Throwable $e) {
+            Log::warning('codeforces_solutions list failed', [
+                'user_id' => $request->user()?->id,
+                'message' => $e->getMessage(),
+            ]);
         }
 
         return Inertia::render('Home', [
             'ollamaAvailable' => $ollamaAvailable,
             'recentSessions' => $recentSessions,
+            'recentCodeforces' => $recentCodeforces,
             'flash' => [
                 'message' => $request->session()->get('message'),
             ],
@@ -50,18 +84,14 @@ class AlgorithmAssistantController extends Controller
     /**
      * Analyze problem and suggest algorithms (Ollama).
      */
-    public function suggest(Request $request)
+    public function suggest(SuggestProblemRequest $request): Response
     {
-        $request->validate([
-            'problem' => 'required|string|min:10|max:2000',
-        ]);
-
-        $problem = $request->input('problem');
+        $problem = $request->validated('problem');
 
         try {
-            $suggestions = $this->ollama->suggestAlgorithms($problem);
+            $suggestions = $this->suggestAlgorithms->handle($problem);
         } catch (\Throwable $e) {
-            return back()->withErrors(['ollama' => 'تعذر الاتصال بـ Ollama. تأكد أنه يعمل محلياً (ollama serve). ' . $e->getMessage()]);
+            return back()->withErrors(['ollama' => 'تعذر الاتصال بـ Ollama. تأكد أنه يعمل محلياً (ollama serve). '.$e->getMessage()]);
         }
 
         return Inertia::render('Suggestions', [
@@ -74,56 +104,33 @@ class AlgorithmAssistantController extends Controller
     /**
      * Run benchmarks for suggested algorithms and get recommendation.
      */
-    public function benchmark(Request $request)
+    public function benchmark(BenchmarkRunRequest $request): Response
     {
-        $request->validate([
-            'problem' => 'required|string',
-            'suggestions' => 'required|array',
-            'suggestions.*.name' => 'required|string',
-            'suggestions.*.benchmark_key' => 'nullable|string',
-        ]);
+        $problem = $request->validated('problem');
+        $suggestions = $request->validated('suggestions');
 
-        $problem = $request->input('problem');
-        $suggestions = $request->input('suggestions');
-        $keys = array_map(fn ($s) => $s['benchmark_key'] ?? 'sorting', $suggestions);
-        $keys = array_unique(array_filter($keys));
-
-        $results = $this->benchmarks->runAll($keys);
-
-        $recommendation = '';
-        try {
-            $recommendation = $this->ollama->recommend($suggestions, $results);
-        } catch (\Throwable $e) {
-            $recommendation = 'لم نتمكن من توليد توصية تلقائية. راجع مقارنة الأداء أعلاه.';
-        }
-
-        $session = null;
-        try {
-            $session = AlgorithmSession::create([
-                'problem' => $problem,
-                'suggestions' => $suggestions,
-                'benchmark_results' => $results,
-                'recommendation' => $recommendation,
-            ]);
-        } catch (\Throwable $e) {
-            // DB might not be set up; continue without saving
-        }
+        $workflow = $this->benchmarkWorkflow->handle(
+            $request->user()?->id,
+            $problem,
+            $suggestions
+        );
 
         return Inertia::render('Results', [
             'problem' => $problem,
             'suggestions' => $suggestions,
-            'benchmarkResults' => $results,
-            'recommendation' => $recommendation,
-            'sessionId' => $session?->id,
+            'benchmarkResults' => $workflow['results'],
+            'recommendation' => $workflow['recommendation'],
+            'sessionId' => $workflow['session']?->id,
         ]);
     }
 
     /**
      * Show a saved session (past result).
      */
-    public function showSession(int $id)
+    public function showSession(Request $request, int $id): Response
     {
-        $session = AlgorithmSession::findOrFail($id);
+        $session = AlgorithmSession::query()->findOrFail($id);
+        $this->authorize('view', $session);
 
         return Inertia::render('Results', [
             'problem' => $session->problem,

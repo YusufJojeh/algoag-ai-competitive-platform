@@ -1,0 +1,43 @@
+{
+    "schema_version": 2,
+    "pattern_id": "two-pointers",
+    "status": "published",
+    "title": {
+        "ar": "المؤشران",
+        "en": "Two pointers"
+    },
+    "summary": {
+        "ar": "تقنية تقدم مؤشرين على مصفوفة أو سلسلة بشكل متزامن.",
+        "en": "Advance two indices over an array or string in a coordinated way."
+    },
+    "when_to_use": {
+        "ar": "عندما يمكن حل المسألة بمسح خطي مع الحفاظ على خاصية أحادية أو ترتيب على جزء من البيانات.",
+        "en": "When a linear scan with monotonicity or order on a sub-range solves the task."
+    },
+    "when_not_to_use": {
+        "ar": "عندما تحتاج استعلامات عشوائية كثيرة أو بنية بيانات ديناميكية لا تسمح بمسح ثابت.",
+        "en": "When you need many random queries or dynamic structures without a two-pointer sweep."
+    },
+    "statement_signals": {
+        "ar": "مصفوفة مرتبة، نافذة منزلقة، أزواج تُبنى من طرفين، تعقيد زمني O(n).",
+        "en": "Sorted array, sliding window, pair formation from both ends, O(n) time hints."
+    },
+    "related_techniques": ["sliding window", "monotonic queue"],
+    "related_pattern_ids": ["io-basics"],
+    "representative_problem_refs": [
+        {
+            "pattern_slug": "io-basics",
+            "problem_slug": "a-plus-b-pilot"
+        }
+    ],
+    "benchmark_key": "two_pointers",
+    "ollama_matching": {
+        "keywords": ["two pointers", "sorted", "pair"],
+        "negative_keywords": [],
+        "notes": {
+            "ar": "غالباً مع ترتيب أو مسار أحادي على المصفوفة.",
+            "en": "Often combined with sorting or monotonic movement."
+        }
+    },
+    "analytics_tags": ["technique.two-pointers", "curriculum.intro"]
+}

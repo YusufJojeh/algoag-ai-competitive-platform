@@ -198,17 +198,17 @@ class OllamaServiceTest extends TestCase
         $this->assertSame('No data.', $result);
     }
 
-    public function test_generate_with_stream_true_makes_request(): void
+    public function test_generate_uses_custom_timeout_single_request(): void
     {
         Http::fake([
-            'http://localhost:11434/api/generate' => Http::response(['response' => 'Streamed then this.'], 200),
+            'http://localhost:11434/api/generate' => Http::response(['response' => 'ok'], 200),
         ]);
 
         $service = new OllamaService;
-        $result = $service->generate('Hello', true);
+        $result = $service->generate('Hello', 60);
 
-        $this->assertSame('Streamed then this.', $result);
-        Http::assertSentCount(2);
+        $this->assertSame('ok', $result);
+        Http::assertSentCount(1);
     }
 
     public function test_base_url_strips_trailing_slash_from_config(): void

@@ -1,0 +1,34 @@
+{
+    "schema_version": 1,
+    "content_version": "1.0.0",
+    "problem_id": "a-plus-b-pilot",
+    "slug": "a-plus-b-pilot",
+    "cp_profile": "cp-v1",
+    "status": "published",
+    "default_locale": "ar",
+    "supported_locales": ["ar", "en"],
+    "titles": {
+        "ar": "جمع عددين",
+        "en": "Sum of two numbers"
+    },
+    "limits": {
+        "time_limit_ms": 1000,
+        "memory_limit_mb": 256
+    },
+    "pattern_ids": ["io-basics"],
+    "difficulty": "easy",
+    "judge": {
+        "io_style": "stdin_stdout"
+    },
+    "translation_paths": {
+        "ar": "ar/statement.md",
+        "en": "en/statement.md"
+    },
+    "suite_refs": ["tests/suite.json"],
+    "solution_refs": ["solutions/metadata.json"],
+    "analytics": {
+        "topic_ids": ["io"],
+        "skill_ids": ["basics"],
+        "estimated_minutes": 5
+    }
+}

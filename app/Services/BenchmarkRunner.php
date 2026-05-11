@@ -3,15 +3,27 @@
 namespace App\Services;
 
 /**
- * Runs algorithm benchmarks with generated data and measures time + memory.
- * Each benchmark_key maps to a small PHP implementation.
+ * Runs synthetic PHP micro-benchmarks with generated data and measures time + memory.
+ *
+ * These numbers are for rough, same-machine comparison of our PHP stand-ins only. They do not
+ * reflect a user’s C++/Python solution or real competitive-programming constraints. Several
+ * keys share the same underlying routine (e.g. greedy, two_pointers, sliding_window → two-sum
+ * style work on sorted data). Graph benchmarks cap node count (see generateData) so `n` is
+ * not comparable across all keys.
+ *
+ * @see runAll() uses a single fixed input size for every key.
  */
 class BenchmarkRunner
 {
-    protected array $sizes = [100, 500, 1000, 2000];
+    /** Default problem size used by runAll() for each benchmark_key. */
+    public const DEFAULT_RUN_ALL_SIZE = 1000;
+
+    /** Hard ceiling on any single run() call to prevent memory exhaustion. */
+    public const MAX_SINGLE_RUN_SIZE = 10_000;
 
     public function run(string $benchmarkKey, int $size = 1000): array
     {
+        $size = max(1, min($size, self::MAX_SINGLE_RUN_SIZE));
         $data = $this->generateData($benchmarkKey, $size);
         $startTime = microtime(true);
         $startMemory = memory_get_usage(true);
@@ -31,7 +43,7 @@ class BenchmarkRunner
     public function runAll(array $benchmarkKeys): array
     {
         $results = [];
-        $defaultSize = 1000;
+        $defaultSize = self::DEFAULT_RUN_ALL_SIZE;
         foreach ($benchmarkKeys as $key) {
             $key = $key ?: 'sorting';
             try {
@@ -40,6 +52,7 @@ class BenchmarkRunner
                 $results[$key] = ['time_ms' => 0, 'memory_mb' => 0, 'n' => $defaultSize, 'error' => $e->getMessage()];
             }
         }
+
         return $results;
     }
 
@@ -56,6 +69,7 @@ class BenchmarkRunner
             case 'binary_search':
             case 'search':
                 sort($arr);
+
                 return $arr;
             case 'graph_bfs':
             case 'graph_dfs':
@@ -69,6 +83,7 @@ class BenchmarkRunner
                         $adj[$a][] = $b;
                     }
                 }
+
                 return ['adj' => $adj, 'start' => 0];
             case 'dynamic_programming':
                 return array_slice($arr, 0, min(50, $n));
@@ -116,7 +131,7 @@ class BenchmarkRunner
                 $this->heapSort($data);
                 break;
             case 'backtracking':
-                $this->subsetSum($data, array_sum($data) / 2);
+                $this->subsetSum($data, intdiv(array_sum($data), 2));
                 break;
             default:
                 $this->quicksort($data);
@@ -151,6 +166,7 @@ class BenchmarkRunner
             }
         }
         [$arr[$i + 1], $arr[$hi]] = [$arr[$hi], $arr[$i + 1]];
+
         return $i + 1;
     }
 
@@ -169,6 +185,7 @@ class BenchmarkRunner
                 $hi = $mid - 1;
             }
         }
+
         return -1;
     }
 
@@ -177,9 +194,10 @@ class BenchmarkRunner
         $visited = array_fill(0, count($adj), false);
         $visited[$start] = true;
         $queue = [$start];
+        $offset = 0;
         $order = [];
-        while (! empty($queue)) {
-            $u = array_shift($queue);
+        while ($offset < count($queue)) {
+            $u = $queue[$offset++];
             $order[] = $u;
             foreach ($adj[$u] ?? [] as $v) {
                 if (! $visited[$v]) {
@@ -188,6 +206,7 @@ class BenchmarkRunner
                 }
             }
         }
+
         return $order;
     }
 
@@ -216,6 +235,7 @@ class BenchmarkRunner
         for ($i = 2; $i <= $n; $i++) {
             $dp[$i] = $dp[$i - 1] + $dp[$i - 2];
         }
+
         return $dp[$n];
     }
 
@@ -236,6 +256,7 @@ class BenchmarkRunner
                 $hi--;
             }
         }
+
         return false;
     }
 
@@ -245,6 +266,7 @@ class BenchmarkRunner
         foreach ($arr as $v) {
             $count[$v] = ($count[$v] ?? 0) + 1;
         }
+
         return $count;
     }
 
@@ -258,6 +280,7 @@ class BenchmarkRunner
             [$arr[0], $arr[$i]] = [$arr[$i], $arr[0]];
             $this->heapify($arr, $i, 0);
         }
+
         return $arr;
     }
 
@@ -278,13 +301,14 @@ class BenchmarkRunner
         }
     }
 
-    private function subsetSum(array $arr, float $target): bool
+    private function subsetSum(array $arr, int $target): bool
     {
         $n = count($arr);
         if ($n === 0) {
-            return $target === 0.0;
+            return $target === 0;
         }
-        return $this->subsetSumRec($arr, $n - 1, (int) round($target));
+
+        return $this->subsetSumRec($arr, $n - 1, $target);
     }
 
     private function subsetSumRec(array $arr, int $i, int $target): bool
@@ -295,6 +319,7 @@ class BenchmarkRunner
         if ($i < 0 || $target < 0) {
             return false;
         }
+
         return $this->subsetSumRec($arr, $i - 1, $target - $arr[$i])
             || $this->subsetSumRec($arr, $i - 1, $target);
     }

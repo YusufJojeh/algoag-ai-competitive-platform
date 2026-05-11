@@ -58,7 +58,7 @@ export default function Results() {
                 )}
 
                 <Link
-                    href="/"
+                    href="/assistant"
                     className="inline-block px-6 py-3 rounded-xl bg-slate-700 hover:bg-slate-600 text-slate-200 font-medium"
                 >
                     مسألة جديدة

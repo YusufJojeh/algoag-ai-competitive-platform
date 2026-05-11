@@ -1,0 +1,17 @@
+{
+    "schema_version": 1,
+    "suite_id": "default",
+    "status": "frozen",
+    "time_limit_ms": 1000,
+    "memory_limit_mb": 256,
+    "samples": [
+        {
+            "id": "sample-1",
+            "input_path": "samples/1.in",
+            "output_path": "samples/1.out",
+            "public": true
+        }
+    ],
+    "generators": [],
+    "checksum": "pilot0000000000000000000000000000000000000000000000000000000000000000"
+}

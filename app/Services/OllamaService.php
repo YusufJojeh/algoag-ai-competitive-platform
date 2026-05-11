@@ -24,37 +24,37 @@ class OllamaService
     {
         try {
             $response = Http::timeout(3)->get("{$this->baseUrl}/api/tags");
+
             return $response->successful();
         } catch (\Throwable $e) {
-            Log::warning('Ollama not available: ' . $e->getMessage());
+            Log::warning('Ollama not available: '.$e->getMessage());
+
             return false;
         }
     }
 
     /**
-     * Generate completion (single prompt, streaming or not).
+     * Generate completion (non-streaming).
+     *
+     * @param  int  $timeout  Timeout in seconds (default 120; use higher for long pipelines)
      */
-    public function generate(string $prompt, bool $stream = false): string
+    public function generate(string $prompt, int $timeout = 120): string
     {
         $url = "{$this->baseUrl}/api/generate";
         $body = [
             'model' => $this->model,
             'prompt' => $prompt,
-            'stream' => $stream,
+            'stream' => false,
         ];
 
-        if ($stream) {
-            $streamBody = is_string($body) ? $body : json_encode($body);
-            Http::timeout(120)->withBody($streamBody, 'application/json')->post($url);
-        }
-
-        $response = Http::timeout(120)->post($url, $body);
+        $response = Http::timeout($timeout)->post($url, $body);
 
         if (! $response->successful()) {
-            throw new \RuntimeException('Ollama request failed: ' . $response->body());
+            throw new \RuntimeException('Ollama request failed: '.$response->body());
         }
 
         $data = $response->json();
+
         return $data['response'] ?? '';
     }
 
@@ -76,7 +76,7 @@ Reply ONLY with a valid JSON array of objects, no markdown or extra text. Exampl
 [{"name":"Binary Search","complexity_time":"O(log n)","complexity_space":"O(1)","description":"Fits when the array is sorted.","when_best":"Sorted array, single target","benchmark_key":"binary_search"}]
 PROMPT;
 
-        $prompt = $systemPrompt . "\n\nProblem:\n" . $problemDescription;
+        $prompt = $systemPrompt."\n\nProblem:\n".$problemDescription;
 
         $response = $this->generate($prompt);
         $response = trim($response);
@@ -90,6 +90,7 @@ PROMPT;
                 ['name' => 'General approach', 'complexity_time' => 'Varies', 'complexity_space' => 'Varies', 'description' => $response ?: 'No suggestion parsed.', 'when_best' => '-', 'benchmark_key' => 'sorting'],
             ];
         }
+
         return $decoded;
     }
 
@@ -98,8 +99,9 @@ PROMPT;
      */
     public function recommend(array $suggestions, array $benchmarkResults): string
     {
-        $context = "Suggested algorithms:\n" . json_encode($suggestions, JSON_PRETTY_PRINT) . "\n\nBenchmark results (time_ms, memory_mb):\n" . json_encode($benchmarkResults, JSON_PRETTY_PRINT);
-        $prompt = "Based on the above suggestions and benchmark results, write a short final recommendation (2-4 sentences) in the same language as the user (Arabic or English): which algorithm to choose and why. Be concise.";
-        return $this->generate($context . "\n\n" . $prompt);
+        $context = "Suggested algorithms:\n".json_encode($suggestions, JSON_PRETTY_PRINT)."\n\nBenchmark results (time_ms, memory_mb):\n".json_encode($benchmarkResults, JSON_PRETTY_PRINT);
+        $prompt = 'Based on the above suggestions and benchmark results, write a short final recommendation (2-4 sentences) in the same language as the user (Arabic or English): which algorithm to choose and why. Be concise.';
+
+        return $this->generate($context."\n\n".$prompt);
     }
 }

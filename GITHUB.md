@@ -34,3 +34,15 @@ git push -u origin main
 - من GitHub: Settings → Developer settings → Personal access tokens → Generate new token.
 
 بعد تنفيذ الأوامر أعلاه يكون المشروع كاملاً على GitHub.
+
+---
+
+## 4. طريقة واحدة بأمر (بعد تثبيت GitHub CLI)
+
+تم تثبيت **GitHub CLI** (`gh`). إذا أكملت تسجيل الدخول في المتصفح (باستخدام الرمز الذي ظهر في الطرفية)، نفّذ من مجلد المشروع:
+
+```powershell
+& "${env:ProgramFiles}\GitHub CLI\gh.exe" repo create algoag --public --source=. --remote=origin --push
+```
+
+هذا ينشئ مستودعاً باسم `algoag` على حسابك ويضيف `origin` ويرفع الفرع `main` مباشرة.

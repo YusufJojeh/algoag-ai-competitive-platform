@@ -1,0 +1,43 @@
+{
+    "schema_version": 2,
+    "pattern_id": "io-basics",
+    "status": "published",
+    "title": {
+        "ar": "أساسيات الإدخال والإخراج",
+        "en": "I/O basics"
+    },
+    "summary": {
+        "ar": "قراءة الأعداد من المدخلات وطباعة النتائج.",
+        "en": "Reading numbers from stdin and printing results."
+    },
+    "when_to_use": {
+        "ar": "عندما تطلب المسألة قراءة بيانات من المدخلات وإخراج إجابة واحدة أو عدة أسطر.",
+        "en": "When the task requires reading input and writing a single or multi-line answer."
+    },
+    "when_not_to_use": {
+        "ar": "عندما تكون المشكلة أساسية عن نماذج بيانات معقدة أو تفاعل غير خطي دون مواصفات إدخال/إخراج واضحة.",
+        "en": "When the core challenge is unrelated to structured stdin/stdout I/O."
+    },
+    "statement_signals": {
+        "ar": "عبارات مثل \"اقرأ من المدخلات\"، \"اطبع الناتج\"، قيود صغيرة على حجم المدخلات.",
+        "en": "Phrases like \"standard input\", \"print the answer\", small constraints on input size."
+    },
+    "related_techniques": ["stdin/stdout", "formatted output"],
+    "related_pattern_ids": [],
+    "representative_problem_refs": [
+        {
+            "pattern_slug": "io-basics",
+            "problem_slug": "a-plus-b-pilot"
+        }
+    ],
+    "benchmark_key": "sorting",
+    "ollama_matching": {
+        "keywords": ["stdin", "stdout", "A+B", "sum"],
+        "negative_keywords": ["graph", "segment tree"],
+        "notes": {
+            "ar": "غالباً أول مسألة في المسابقات.",
+            "en": "Often the first problem in contests."
+        }
+    },
+    "analytics_tags": ["curriculum.io", "technique.io"]
+}

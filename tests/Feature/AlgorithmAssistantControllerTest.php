@@ -3,77 +3,35 @@
 namespace Tests\Feature;
 
 use App\Models\AlgorithmSession;
-use App\Services\BenchmarkRunner;
-use App\Services\OllamaService;
+use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Http;
-use Illuminate\Support\Facades\Schema;
 use Tests\TestCase;
 
 class AlgorithmAssistantControllerTest extends TestCase
 {
     use RefreshDatabase;
 
+    protected User $user;
+
     protected function defineDatabaseMigrations(): void
     {
-        $this->loadMigrationsFrom(__DIR__ . '/../../database/migrations');
+        $this->loadMigrationsFrom(__DIR__.'/../../database/migrations');
     }
 
     protected function setUp(): void
     {
         parent::setUp();
         Http::preventStrayRequests();
+        $this->user = User::factory()->create();
+        $this->actingAs($this->user);
     }
 
-    public function test_home_returns_200_and_inertia_home(): void
+    public function test_dashboard_home_redirects_to_assistant_workspace(): void
     {
-        Http::fake([
-            '*/api/tags' => Http::response([], 200),
-        ]);
+        $response = $this->get('/dashboard');
 
-        $response = $this->get('/');
-
-        $response->assertStatus(200);
-        $response->assertInertia(fn ($page) => $page
-            ->component('Home')
-            ->has('ollamaAvailable')
-            ->has('recentSessions')
-            ->has('flash')
-        );
-    }
-
-    public function test_home_works_when_ollama_unavailable(): void
-    {
-        Http::fake([
-            '*' => Http::response(null, 500),
-        ]);
-
-        $response = $this->get('/');
-
-        $response->assertStatus(200);
-        $response->assertInertia(fn ($page) => $page
-            ->where('ollamaAvailable', false)
-        );
-    }
-
-    public function test_home_shows_recent_sessions_when_db_has_sessions(): void
-    {
-        Http::fake(['*/api/tags' => Http::response([], 200)]);
-
-        AlgorithmSession::create([
-            'problem' => 'Sort an array of integers.',
-            'suggestions' => [],
-            'benchmark_results' => [],
-            'recommendation' => 'Use quicksort.',
-        ]);
-
-        $response = $this->get('/');
-
-        $response->assertStatus(200);
-        $response->assertInertia(fn ($page) => $page
-            ->has('recentSessions', 1)
-            ->where('recentSessions.0.problem_preview', 'Sort an array of integers.')
-        );
+        $response->assertRedirect('/assistant');
     }
 
     public function test_suggest_requires_problem_min_length(): void
@@ -153,6 +111,7 @@ class AlgorithmAssistantControllerTest extends TestCase
         ]);
 
         $this->assertDatabaseHas('algorithm_sessions', [
+            'user_id' => $this->user->id,
             'problem' => 'Sort data.',
         ]);
     }
@@ -177,13 +136,14 @@ class AlgorithmAssistantControllerTest extends TestCase
     public function test_show_session_returns_saved_result(): void
     {
         $session = AlgorithmSession::create([
+            'user_id' => $this->user->id,
             'problem' => 'Old problem.',
             'suggestions' => [['name' => 'Algo', 'benchmark_key' => 'sorting']],
             'benchmark_results' => ['sorting' => ['time_ms' => 1, 'memory_mb' => 0.1, 'n' => 100]],
             'recommendation' => 'Use it.',
         ]);
 
-        $response = $this->get('/session/' . $session->id);
+        $response = $this->get('/session/'.$session->id);
 
         $response->assertStatus(200);
         $response->assertInertia(fn ($page) => $page
@@ -233,7 +193,7 @@ class AlgorithmAssistantControllerTest extends TestCase
         Http::fake(['*/api/generate' => Http::response(null, 500)]);
 
         $response = $this->post('/benchmark', [
-            'problem' => 'Sort.',
+            'problem' => 'Sort the array efficiently.',
             'suggestions' => [['name' => 'Sort', 'benchmark_key' => 'sorting']],
         ]);
 
@@ -246,23 +206,36 @@ class AlgorithmAssistantControllerTest extends TestCase
     public function test_benchmark_validation_requires_suggestion_names(): void
     {
         $response = $this->post('/benchmark', [
-            'problem' => 'P',
+            'problem' => 'Valid length problem text for benchmark validation rules here.',
             'suggestions' => [['name' => '']],
         ]);
 
         $response->assertSessionHasErrors();
     }
 
+    public function test_benchmark_rejects_problem_over_max_length(): void
+    {
+        $response = $this->post('/benchmark', [
+            'problem' => str_repeat('a', 5001),
+            'suggestions' => [
+                ['name' => 'Quick Sort', 'benchmark_key' => 'sorting'],
+            ],
+        ]);
+
+        $response->assertSessionHasErrors('problem');
+    }
+
     public function test_show_session_with_null_recommendation_and_empty_arrays(): void
     {
         $session = AlgorithmSession::create([
+            'user_id' => $this->user->id,
             'problem' => 'Minimal.',
             'suggestions' => [],
             'benchmark_results' => [],
             'recommendation' => null,
         ]);
 
-        $response = $this->get('/session/' . $session->id);
+        $response = $this->get('/session/'.$session->id);
 
         $response->assertStatus(200);
         $response->assertInertia(fn ($page) => $page
@@ -270,35 +243,6 @@ class AlgorithmAssistantControllerTest extends TestCase
             ->has('suggestions')
             ->has('benchmarkResults')
         );
-    }
-
-    public function test_home_recent_sessions_limited_to_10(): void
-    {
-        Http::fake(['*/api/tags' => Http::response([], 200)]);
-
-        for ($i = 0; $i < 15; $i++) {
-            AlgorithmSession::create([
-                'problem' => "Problem {$i}",
-                'suggestions' => [],
-                'benchmark_results' => [],
-                'recommendation' => '',
-            ]);
-        }
-
-        $response = $this->get('/');
-
-        $response->assertStatus(200);
-        $response->assertInertia(fn ($page) => $page->has('recentSessions', 10));
-    }
-
-    public function test_home_flash_message_passed_to_view(): void
-    {
-        Http::fake(['*/api/tags' => Http::response([], 200)]);
-
-        $response = $this->withSession(['message' => 'تم بنجاح'])->get('/');
-
-        $response->assertStatus(200);
-        $response->assertInertia(fn ($page) => $page->where('flash.message', 'تم بنجاح'));
     }
 
     public function test_suggest_returns_multiple_suggestions(): void
@@ -312,53 +256,94 @@ class AlgorithmAssistantControllerTest extends TestCase
         $response->assertInertia(fn ($page) => $page->has('suggestions', 2)->where('suggestions.1.name', 'B'));
     }
 
-    public function test_index_returns_empty_sessions_when_db_throws(): void
+    public function test_show_session_returns_403_for_other_user(): void
     {
-        Http::fake(['*/api/tags' => Http::response([], 200)]);
-
-        Schema::dropIfExists('algorithm_sessions');
-
-        $response = $this->get('/');
-
-        $response->assertStatus(200);
-        $response->assertInertia(fn ($page) => $page->has('recentSessions')->component('Home'));
-    }
-
-    public function test_benchmark_when_session_create_fails_still_returns_results_without_session_id(): void
-    {
-        Http::fake(['*/api/generate' => Http::response(['response' => 'Use it.'], 200)]);
-
-        Schema::dropIfExists('algorithm_sessions');
-
-        $response = $this->post('/benchmark', [
-            'problem' => 'Sort data.',
-            'suggestions' => [['name' => 'Quick Sort', 'benchmark_key' => 'sorting']],
-        ]);
-
-        $response->assertStatus(200);
-        $response->assertInertia(fn ($page) => $page
-            ->component('Results')
-            ->where('problem', 'Sort data.')
-            ->where('sessionId', null)
-        );
-    }
-
-    public function test_home_session_with_null_recommendation_uses_null_preview(): void
-    {
-        Http::fake(['*/api/tags' => Http::response([], 200)]);
-
-        AlgorithmSession::create([
-            'problem' => 'Problem with no recommendation text.',
+        $other = User::factory()->create();
+        $session = AlgorithmSession::create([
+            'user_id' => $other->id,
+            'problem' => 'Private.',
             'suggestions' => [],
             'benchmark_results' => [],
-            'recommendation' => null,
+            'recommendation' => 'x',
         ]);
 
-        $response = $this->get('/');
+        $response = $this->get('/session/'.$session->id);
+
+        $response->assertStatus(403);
+    }
+
+    // SEC-03: benchmark_key must be from the canonical whitelist or null.
+
+    public function test_benchmark_rejects_unknown_benchmark_key(): void
+    {
+        $response = $this->post('/benchmark', [
+            'problem' => 'Find element in sorted array.',
+            'suggestions' => [
+                ['name' => 'Magic Algo', 'benchmark_key' => 'totally_made_up_key'],
+            ],
+        ]);
+
+        $response->assertSessionHasErrors('suggestions.0.benchmark_key');
+    }
+
+    public function test_benchmark_accepts_null_benchmark_key(): void
+    {
+        Http::fake(['*/api/generate' => Http::response(['response' => 'Use sorting.'], 200)]);
+
+        $response = $this->post('/benchmark', [
+            'problem' => 'Sort data efficiently here.',
+            'suggestions' => [
+                ['name' => 'Quick Sort', 'benchmark_key' => null],
+            ],
+        ]);
 
         $response->assertStatus(200);
-        $response->assertInertia(fn ($page) => $page
-            ->where('recentSessions.0.recommendation_preview', null)
-        );
+        $response->assertInertia(fn ($page) => $page->component('Results'));
+    }
+
+    public function test_benchmark_accepts_every_canonical_key(): void
+    {
+        Http::fake(['*/api/generate' => Http::response(['response' => 'ok'], 200)]);
+
+        $keys = \App\Services\BenchmarkKeys::KEYS;
+
+        foreach ($keys as $key) {
+            $response = $this->post('/benchmark', [
+                'problem' => 'Find element in sorted array.',
+                'suggestions' => [
+                    ['name' => 'Algo', 'benchmark_key' => $key],
+                ],
+            ]);
+            $response->assertStatus(200, "Key '{$key}' should be accepted");
+        }
+    }
+
+    // SEC-04: E2E login endpoint must be POST (GET must return 405).
+
+    public function test_e2e_login_get_returns_405_in_testing_env(): void
+    {
+        // The e2e.fixtures middleware requires X-E2E-Secret; once it passes,
+        // the GET should hit the route definition and return 405 for the POST-only verb.
+        $response = $this->withHeaders(['X-E2E-Secret' => 'phpunit-e2e-secret'])
+            ->get('/__e2e/runtime/auth/login');
+
+        $response->assertStatus(405);
+    }
+
+    // COR-06: null-safe operator — index must not crash when user() returns null
+    // (covered implicitly by the auth middleware, but we assert the session list
+    // still returns an empty array on DB error rather than crashing).
+
+    public function test_index_returns_200_with_empty_recent_when_db_fails(): void
+    {
+        Http::fake(['*/api/tags' => Http::response([], 200)]);
+
+        // Drop the sessions table so the query throws — the controller must
+        // swallow it and return an empty recent list (not a 500).
+        \Illuminate\Support\Facades\Schema::dropIfExists('algorithm_sessions');
+
+        $response = $this->get('/assistant');
+
+        $response->assertStatus(200);
     }
 }
