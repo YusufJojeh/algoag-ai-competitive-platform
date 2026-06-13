@@ -9,6 +9,7 @@ const mockPost = vi.fn();
 vi.mock('@inertiajs/react', () => ({
     usePage: () => mockUsePage(),
     useForm: (initial) => mockUseForm(initial) ?? { post: mockPost, processing: false },
+    Link: ({ href, children, ...rest }) => <a href={href} {...rest}>{children}</a>,
 }));
 
 describe('Suggestions', () => {

@@ -5,11 +5,14 @@ namespace App\Providers;
 use App\Models\AssistantSession;
 use App\Modules\Execution\Contracts\CodeJudge;
 use App\Services\Assistant\AI\OpenAIVisionProvider;
+use App\Services\Assistant\AI\AssistantProviderResolver;
 use App\Services\Assistant\Contracts\AIProvider;
 use App\Services\Assistant\Contracts\STTProvider;
 use App\Services\Assistant\Contracts\TTSProvider;
 use App\Services\Assistant\STT\WhisperSTT;
 use App\Services\Assistant\TTS\OpenAITTS;
+use App\Services\AI\PrimaryTextGenerator;
+use App\Services\AI\TextGenerator;
 use App\Modules\Execution\Judges\LocalProcessJudge;
 use App\Modules\Execution\Judges\StubCodeJudge;
 use App\Models\AlgorithmSession;
@@ -58,7 +61,13 @@ class AppServiceProvider extends ServiceProvider
 
             return $app->make(LocalProcessJudge::class);
         });
-        $this->app->singleton(AIProvider::class, OpenAIVisionProvider::class);
+        // Text generation (suggestions + Codeforces pipeline): OpenAI primary,
+        // Ollama fallback. CodeforcesSolverService depends on the interface.
+        $this->app->singleton(TextGenerator::class, PrimaryTextGenerator::class);
+
+        $this->app->singleton(OpenAIVisionProvider::class);
+        $this->app->singleton(AssistantProviderResolver::class);
+        $this->app->singleton(AIProvider::class, fn ($app) => $app->make(AssistantProviderResolver::class)->resolve());
         $this->app->singleton(STTProvider::class, WhisperSTT::class);
         $this->app->singleton(TTSProvider::class, OpenAITTS::class);
 

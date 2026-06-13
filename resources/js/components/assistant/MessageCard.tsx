@@ -20,8 +20,8 @@ export default function MessageCard({ message, streaming = false }: MessageCardP
             className={[
                 'rounded-[30px] border px-5 py-4 shadow-sm transition',
                 isAssistant
-                    ? 'border-[rgba(139,123,246,0.16)] bg-white/96'
-                    : 'border-[var(--app-border)] bg-[rgba(247,243,255,0.88)]',
+                    ? 'border-violet-300/18 bg-slate-950/55'
+                    : 'border-[var(--app-border)] bg-slate-900/70',
             ].join(' ')}
         >
             <div className="mb-3 flex items-center justify-between gap-3">
@@ -29,7 +29,7 @@ export default function MessageCard({ message, streaming = false }: MessageCardP
                     <div
                         className={[
                             'flex h-10 w-10 items-center justify-center rounded-[18px]',
-                            isAssistant ? 'bg-[var(--app-accent-soft)] text-[var(--app-accent-strong)]' : 'bg-slate-100 text-slate-600',
+                            isAssistant ? 'bg-[var(--app-accent-soft)] text-[var(--app-accent-strong)]' : 'bg-cyan-400/10 text-cyan-200',
                         ].join(' ')}
                     >
                         {isAssistant ? <Bot className="h-4 w-4" /> : <UserRound className="h-4 w-4" />}
@@ -38,14 +38,14 @@ export default function MessageCard({ message, streaming = false }: MessageCardP
                         <p className="text-sm font-semibold text-[var(--app-foreground)]">{isAssistant ? (locale === 'ar' ? 'المساعد' : 'Assistant') : (locale === 'ar' ? 'أنت' : 'You')}</p>
                         <p className="text-xs text-[var(--app-muted)]">
                             {isAssistant
-                                ? (locale === 'ar' ? 'تحليل تعليمي متدفق' : 'Streaming teaching analysis')
+                                ? (locale === 'ar' ? 'تحليل تعليمي محدث' : 'Teaching analysis')
                                 : (locale === 'ar' ? 'ملخص الفكرة الحالية' : 'Current idea summary')}
                         </p>
                     </div>
                 </div>
                 <div className="flex items-center gap-2">
                     {mode && <Badge variant="app">{mode.shortLabel}</Badge>}
-                    {streaming && <Badge variant="subtle">{locale === 'ar' ? 'يبث الآن' : 'Streaming now'}</Badge>}
+                    {streaming && <Badge variant="subtle">{locale === 'ar' ? 'قيد التحديث' : 'Updating'}</Badge>}
                 </div>
             </div>
 

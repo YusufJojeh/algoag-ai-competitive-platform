@@ -1,8 +1,10 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
 
-const MAX_WIDTH = 1280;
-const MAX_HEIGHT = 720;
-const JPEG_QUALITY = 0.7;
+// Full-HD frames at high JPEG quality so the Vision model can read code and
+// problem statements; 1280×720 @ 0.7 was too blurry for small editor fonts.
+const MAX_WIDTH = 1920;
+const MAX_HEIGHT = 1080;
+const JPEG_QUALITY = 0.85;
 
 export default function useScreenCapture() {
     const [isSharing, setIsSharing] = useState(false);

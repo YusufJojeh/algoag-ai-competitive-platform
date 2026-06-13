@@ -5,7 +5,21 @@ function getSpeechRecognition() {
     return window.SpeechRecognition || window.webkitSpeechRecognition || null;
 }
 
-export default function useVoiceInput(initialLanguage = 'ar-SA') {
+function getSupportedMimeType() {
+    const candidates = [
+        'audio/webm;codecs=opus',
+        'audio/webm',
+        'audio/ogg;codecs=opus',
+        'audio/ogg',
+    ];
+    if (typeof MediaRecorder === 'undefined') return '';
+    return candidates.find((type) => MediaRecorder.isTypeSupported(type)) ?? '';
+}
+
+const SILENCE_AUTO_STOP_MS = 5_000;
+
+export default function useVoiceInput(initialLanguage = 'ar-SA', options = {}) {
+    const { silenceAutoStopMs = SILENCE_AUTO_STOP_MS, onSilenceAutoStop } = options;
     const [isRecording, setIsRecording] = useState(false);
     const [transcript, setTranscript] = useState('');
     const [audioBlob, setAudioBlob] = useState(null);
@@ -15,6 +29,19 @@ export default function useVoiceInput(initialLanguage = 'ar-SA') {
     const recognitionRef = useRef(null);
     const recorderRef = useRef(null);
     const chunksRef = useRef([]);
+    const silenceTimerRef = useRef(null);
+    const onSilenceAutoStopRef = useRef(onSilenceAutoStop);
+
+    useEffect(() => {
+        onSilenceAutoStopRef.current = onSilenceAutoStop;
+    }, [onSilenceAutoStop]);
+
+    const clearSilenceTimer = useCallback(() => {
+        if (silenceTimerRef.current) {
+            clearTimeout(silenceTimerRef.current);
+            silenceTimerRef.current = null;
+        }
+    }, []);
 
     const SpeechRecognitionCtor = useMemo(() => getSpeechRecognition(), []);
     const isSpeechSupported = !!SpeechRecognitionCtor;
@@ -41,10 +68,27 @@ export default function useVoiceInput(initialLanguage = 'ar-SA') {
                     interim += result[0].transcript;
                 }
             }
-            setTranscript(final + interim);
+            const text = final + interim;
+            setTranscript(text);
+
+            // Once speech has been captured, restart the silence countdown on every
+            // new result; if nothing arrives for silenceAutoStopMs, stop and auto-send.
+            clearSilenceTimer();
+            if (text.trim()) {
+                silenceTimerRef.current = setTimeout(() => {
+                    silenceTimerRef.current = null;
+                    if (recognitionRef.current) {
+                        recognitionRef.current.stop();
+                        recognitionRef.current = null;
+                    }
+                    setIsRecording(false);
+                    onSilenceAutoStopRef.current?.();
+                }, silenceAutoStopMs);
+            }
         };
 
         recognition.onerror = (event) => {
+            clearSilenceTimer();
             if (event.error === 'not-allowed') {
                 setError('تم رفض إذن الميكروفون');
             } else if (event.error !== 'aborted') {
@@ -61,12 +105,15 @@ export default function useVoiceInput(initialLanguage = 'ar-SA') {
         recognition.start();
         setIsRecording(true);
         setError(null);
-    }, [language]);
+    }, [language, silenceAutoStopMs, clearSilenceTimer]);
 
     const startMediaRecorder = useCallback(async () => {
         try {
             const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-            const recorder = new MediaRecorder(stream, { mimeType: 'audio/webm;codecs=opus' });
+            const mimeType = getSupportedMimeType();
+            const recorder = mimeType
+                ? new MediaRecorder(stream, { mimeType })
+                : new MediaRecorder(stream);
             chunksRef.current = [];
 
             recorder.ondataavailable = (e) => {
@@ -74,7 +121,7 @@ export default function useVoiceInput(initialLanguage = 'ar-SA') {
             };
 
             recorder.onstop = () => {
-                const blob = new Blob(chunksRef.current, { type: 'audio/webm' });
+                const blob = new Blob(chunksRef.current, { type: recorder.mimeType || 'audio/webm' });
                 setAudioBlob(blob);
                 stream.getTracks().forEach((t) => t.stop());
                 setIsRecording(false);
@@ -111,6 +158,7 @@ export default function useVoiceInput(initialLanguage = 'ar-SA') {
     }, [isSpeechSupported, isSupported, startSpeechRecognition, startMediaRecorder]);
 
     const stopRecording = useCallback(() => {
+        clearSilenceTimer();
         if (recognitionRef.current) {
             recognitionRef.current.stop();
             recognitionRef.current = null;
@@ -120,10 +168,11 @@ export default function useVoiceInput(initialLanguage = 'ar-SA') {
             recorderRef.current = null;
         }
         setIsRecording(false);
-    }, []);
+    }, [clearSilenceTimer]);
 
     useEffect(() => {
         return () => {
+            if (silenceTimerRef.current) clearTimeout(silenceTimerRef.current);
             if (recognitionRef.current) recognitionRef.current.abort();
             if (recorderRef.current && recorderRef.current.state === 'recording') {
                 recorderRef.current.stop();

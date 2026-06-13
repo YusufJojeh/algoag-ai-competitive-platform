@@ -1,8 +1,20 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { act, render, screen } from '@testing-library/react';
 import Assistant from './Assistant';
 
 const mockUsePage = vi.fn();
+const mockScreenCaptureState = vi.hoisted(() => ({
+    value: {
+        isSharing: false,
+        stream: null,
+        error: null,
+        isSupported: true,
+        startSharing: vi.fn(),
+        stopSharing: vi.fn(),
+        captureFrame: vi.fn(),
+        videoRef: { current: null },
+    },
+}));
 
 vi.mock('@inertiajs/react', () => ({
     usePage: () => mockUsePage(),
@@ -17,16 +29,7 @@ vi.mock('@inertiajs/react', () => ({
 }));
 
 vi.mock('../hooks/useScreenCapture', () => ({
-    default: () => ({
-        isSharing: false,
-        stream: null,
-        error: null,
-        isSupported: true,
-        startSharing: vi.fn(),
-        stopSharing: vi.fn(),
-        captureFrame: vi.fn(),
-        videoRef: { current: null },
-    }),
+    default: () => mockScreenCaptureState.value,
 }));
 
 vi.mock('../hooks/useVoiceInput', () => ({
@@ -63,6 +66,17 @@ vi.mock('../hooks/useAssistantStream', () => ({
 describe('Assistant Page', () => {
     beforeEach(() => {
         vi.clearAllMocks();
+        vi.useRealTimers();
+        mockScreenCaptureState.value = {
+            isSharing: false,
+            stream: null,
+            error: null,
+            isSupported: true,
+            startSharing: vi.fn(),
+            stopSharing: vi.fn(),
+            captureFrame: vi.fn(),
+            videoRef: { current: null },
+        };
         mockUsePage.mockReturnValue({
             props: {
                 auth: { user: { id: 1, name: 'Test', email: 't@t.com', is_admin: false } },
@@ -70,67 +84,79 @@ describe('Assistant Page', () => {
         });
     });
 
-    it('renders the page heading', () => {
+    it('renders the assistant workspace shell', () => {
         render(<Assistant />);
-        expect(screen.getByText('مساحة المساعد الصوتي والبصري')).toBeInTheDocument();
+        expect(screen.getByTestId('assistant-workspace-shell')).toBeInTheDocument();
+        expect(screen.getByTestId('screen-context-panel')).toBeInTheDocument();
+        expect(screen.getByTestId('transcript-composer')).toBeInTheDocument();
     });
 
-    it('renders screen sharing empty state', () => {
+    it('renders one assistant mode dropdown with every supported mode', () => {
         render(<Assistant />);
-        expect(screen.getByText('ابدأ مشاركة الشاشة')).toBeInTheDocument();
+        const modeSelect = screen.getByTestId('assistant-mode-select');
+        const values = Array.from(modeSelect.options).map((option) => option.value);
+
+        expect(modeSelect).toHaveAccessibleName('نمط المساعد');
+        expect(modeSelect).toHaveValue('auto');
+        expect(values).toEqual(expect.arrayContaining([
+            'auto',
+            'topic_explanation',
+            'topic_recommendation',
+            'hint',
+            'idea_check',
+            'logic_critique',
+            'edge_cases',
+            'complexity',
+            'full_solution',
+            'step_by_step_solution',
+            'approach_compare',
+            'common_mistakes',
+            'solve',
+            'generate_code',
+            'generate_tests',
+            'verify_code',
+            'debug_wrong_answer',
+            'wrong',
+            'summarize',
+            'next_step',
+        ]));
     });
 
-    it('renders transcript composer', () => {
+    it('does not render mode shortcut buttons', () => {
         render(<Assistant />);
-        expect(screen.getByPlaceholderText(/اشرح فكرتك الحالية/)).toBeInTheDocument();
+        expect(screen.queryByRole('button', { name: /Give me a hint|Review the idea/i })).not.toBeInTheDocument();
     });
 
-    it('renders all quick action modes', () => {
+    it('renders the live navigation links', () => {
         render(<Assistant />);
-        expect(screen.getByText('الموضوع')).toBeInTheDocument();
-        expect(screen.getByText('ترشيح')).toBeInTheDocument();
-        expect(screen.getByText('تلميح')).toBeInTheDocument();
-        expect(screen.getAllByText('تحقق').length).toBeGreaterThan(0);
-        expect(screen.getByText('منطق خاطئ')).toBeInTheDocument();
-        expect(screen.getByText('حل كامل')).toBeInTheDocument();
-        expect(screen.getByText('خطوة بخطوة')).toBeInTheDocument();
-        expect(screen.getByText('مقارنة')).toBeInTheDocument();
-        expect(screen.getByText('أخطاء شائعة')).toBeInTheDocument();
-        expect(screen.getByText('حالات حدية')).toBeInTheDocument();
-        expect(screen.getByText('التعقيد')).toBeInTheDocument();
-    });
-
-    it('renders send button', () => {
-        render(<Assistant />);
-        expect(screen.getByRole('button', { name: 'أرسل للتحليل' })).toBeInTheDocument();
-    });
-
-    it('renders conversation empty state', () => {
-        render(<Assistant />);
-        expect(screen.getByText('ابدأ جلسة تحليل جديدة')).toBeInTheDocument();
-    });
-
-    it('renders live context panel', () => {
-        render(<Assistant />);
-        expect(screen.getByText('لوحة السياق الحي')).toBeInTheDocument();
-    });
-
-    it('renders status indicator as idle', () => {
-        render(<Assistant />);
-        expect(screen.getAllByText('جاهز').length).toBeGreaterThan(0);
-    });
-
-    it('renders navigation links', () => {
-        render(<Assistant />);
-        expect(screen.getByText('الموضوعات')).toBeInTheDocument();
-        expect(screen.getByText('المسائل')).toBeInTheDocument();
-        expect(screen.getByText('المسارات')).toBeInTheDocument();
         expect(screen.getByText('Codeforces')).toBeInTheDocument();
     });
 
-    it('analyze button is disabled when no frame captured', () => {
+    it('keeps submit disabled until there is frame, text, or audio input', () => {
         render(<Assistant />);
-        const btn = screen.getByRole('button', { name: 'أرسل للتحليل' });
-        expect(btn).toBeDisabled();
+        expect(screen.getByRole('button', { name: 'أرسل للتحليل' })).toBeDisabled();
+    });
+
+    it('captures a screen frame immediately and every three seconds while sharing', async () => {
+        vi.useFakeTimers();
+        const captureFrame = vi.fn().mockResolvedValue(new Blob(['frame'], { type: 'image/jpeg' }));
+        mockScreenCaptureState.value = {
+            ...mockScreenCaptureState.value,
+            isSharing: true,
+            captureFrame,
+        };
+
+        const { unmount } = render(<Assistant />);
+
+        await act(async () => {});
+        expect(captureFrame).toHaveBeenCalledTimes(1);
+
+        await act(async () => {
+            await vi.advanceTimersByTimeAsync(5_000);
+        });
+
+        expect(captureFrame).toHaveBeenCalledTimes(2);
+        unmount();
+        vi.useRealTimers();
     });
 });

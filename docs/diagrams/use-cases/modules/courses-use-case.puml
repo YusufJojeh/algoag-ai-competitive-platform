@@ -1,0 +1,16 @@
+@startuml
+title وحدة المسارات التعليمية
+left to right direction
+skinparam packageStyle rectangle
+
+actor "مستخدم مصادق" as AuthUser
+
+rectangle "ALGOAG" {
+    usecase "استعراض المسارات التعليمية" as UC_Index
+    usecase "عرض مسار تعليمي" as UC_Show
+}
+
+AuthUser --> UC_Index
+AuthUser --> UC_Show
+
+@enduml

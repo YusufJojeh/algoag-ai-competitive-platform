@@ -5,8 +5,8 @@ import { useUiLocale } from '@/lib/ui-locale';
 export default function HowItWorksTimeline() {
     const { locale } = useUiLocale();
     const steps = locale === 'ar'
-        ? ['شارك الشاشة', 'اشرح فكرتك', 'استقبل التحليل المتدرج']
-        : ['Share the screen', 'Explain the idea', 'Receive a guided analysis'];
+        ? ['شارك المسألة أو الصقها', 'اختر نوع التدريب', 'راجع التلميح أو التعقيد أو الكود']
+        : ['Share or paste the problem', 'Choose a coaching mode', 'Review the hint, complexity, or code'];
 
     return (
         <section className="landing-section-shell px-4 py-12 sm:px-6 lg:px-8 lg:py-16" id="how-it-works">

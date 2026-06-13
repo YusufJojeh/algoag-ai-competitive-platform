@@ -261,7 +261,12 @@ const scenarioFactory = (locale: UiLocale): Record<AssistantVisualScenarioName, 
     streaming: {
         name: 'streaming',
         mode: 'wrong',
-        status: 'streaming',
+        // Presentational-only scene name. 'streaming' is not a backend StreamStatus,
+        // but the committed visual snapshot was generated with this exact runtime
+        // value (consumers treat any non-'idle' status as an active/busy stream and
+        // getStatusMeta falls back to neutral meta). Keep the value verbatim so the
+        // snapshot stays byte-identical; cast through unknown to satisfy the union.
+        status: 'streaming' as unknown as StreamStatus,
         isUsingPolling: false,
         sessionId: 42,
         currentRequestMessageId: 902,

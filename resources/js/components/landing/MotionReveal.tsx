@@ -13,7 +13,7 @@ export default function MotionReveal({ children, className, delay = 0 }: MotionR
     return (
         <motion.div
             className={className}
-            initial={reduceMotion ? false : { opacity: 0, y: 16 }}
+            initial={false}
             whileInView={reduceMotion ? undefined : { opacity: 1, y: 0 }}
             viewport={{ once: true, amount: 0.2 }}
             transition={{ duration: 0.45, ease: 'easeOut', delay }}

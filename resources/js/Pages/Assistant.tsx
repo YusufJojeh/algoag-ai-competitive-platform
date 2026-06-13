@@ -18,6 +18,16 @@ import useScreenCapture from '../hooks/useScreenCapture';
 import useVoiceInput from '../hooks/useVoiceInput';
 
 const BUSY_STATUSES: StreamStatus[] = ['queued', 'transcribing', 'analyzing', 'tts_generating'];
+const SCREEN_FRAME_REFRESH_MS = 3_000;
+// How long to wait for OpenAI TTS after the text completes before revealing the
+// reply with browser speech instead (keeps text + voice arriving together).
+const TTS_REVEAL_FALLBACK_MS = 12_000;
+
+type RevealedReply = {
+    text: string;
+    audioUrl: string | null;
+    webSpeak: boolean;
+};
 
 type AssistantPageProps = {
     auth?: {
@@ -32,6 +42,7 @@ type AssistantPageProps = {
         scenario?: AssistantVisualScenarioName;
         mode?: AssistantMode | null;
     };
+    initialPrompt?: string | null;
 };
 
 export default function Assistant() {
@@ -41,20 +52,24 @@ export default function Assistant() {
         return <AssistantVisualPage scenarioName={page.props.e2e.scenario} modeOverride={page.props.e2e.mode ?? null} />;
     }
 
-    return <RealAssistantPage userId={page.props.auth?.user?.id ?? null} />;
+    return <RealAssistantPage userId={page.props.auth?.user?.id ?? null} initialPrompt={page.props.initialPrompt ?? null} />;
 }
 
 type RealAssistantPageProps = {
     userId: number | null;
+    initialPrompt: string | null;
 };
 
-function RealAssistantPage({ userId }: RealAssistantPageProps) {
+function RealAssistantPage({ userId, initialPrompt }: RealAssistantPageProps) {
     const { locale } = useUiLocale();
     const screen = useScreenCapture();
-    const voice = useVoiceInput(getSpeechLanguage(locale));
+    const [autoSendPending, setAutoSendPending] = useState(false);
+    const voice = useVoiceInput(getSpeechLanguage(locale), {
+        onSilenceAutoStop: () => setAutoSendPending(true),
+    });
     const stream = useAssistantStream(userId ?? undefined);
 
-    const [mode, setMode] = useState<AssistantMode>('idea_check');
+    const [mode, setMode] = useState<AssistantMode>('auto');
     const [capturedFrame, setCapturedFrame] = useState<Blob | null>(null);
     const [messages, setMessages] = useState<ThreadMessage[]>([]);
     const [sessionId, setSessionId] = useState<number | null>(null);
@@ -62,20 +77,23 @@ function RealAssistantPage({ userId }: RealAssistantPageProps) {
     const [currentRequestMode, setCurrentRequestMode] = useState<AssistantMode>('idea_check');
     const [submitError, setSubmitError] = useState<string | null>(null);
     const [events, setEvents] = useState<WorkspaceEvent[]>([]);
+    const [revealedReply, setRevealedReply] = useState<RevealedReply | null>(null);
 
     const status = (stream.status ?? 'idle') as StreamStatus;
     const isBusy = BUSY_STATUSES.includes(status);
     // Frame is optional: allow text-only submit (pasted problem text) as well as screen-context submit
     const hasInput = Boolean(voice.transcript.trim() || voice.audioBlob);
-    const canSubmit = hasInput;
+    const canSubmit = hasInput || Boolean(capturedFrame);
 
     const eventCounterRef = useRef(0);
+    const handleAnalyzeRef = useRef<(() => Promise<void>) | null>(null);
     const previousSharingRef = useRef(false);
     const previousCaptureRef = useRef<Blob | null>(null);
     const previousStatusRef = useRef<StreamStatus>('idle');
     const previousAudioUrlRef = useRef<string | null>(null);
     const previousPollingRef = useRef(false);
     const previousErrorRef = useRef<string | null>(null);
+    const autoCaptureInFlightRef = useRef(false);
 
     const appendEvent = useCallback((title: string, description: string, tone: TimelineTone = 'neutral') => {
         eventCounterRef.current += 1;
@@ -107,7 +125,32 @@ function RealAssistantPage({ userId }: RealAssistantPageProps) {
     }, [appendEvent, locale]);
 
     useEffect(() => {
-        if (stream.fullText && currentRequestMessageId) {
+        if (initialPrompt && !voice.transcript.trim()) {
+            voice.setTranscript(initialPrompt);
+        }
+    }, [initialPrompt, voice]);
+
+    // Hold the completed text until the spoken reply is ready so both reveal together.
+    // If OpenAI TTS does not arrive within the fallback window, reveal with browser speech.
+    useEffect(() => {
+        if (!stream.fullText || !currentRequestMessageId) {
+            return;
+        }
+
+        if (stream.audioUrl) {
+            setRevealedReply({ text: stream.fullText, audioUrl: stream.audioUrl, webSpeak: false });
+            return;
+        }
+
+        const timeoutId = window.setTimeout(() => {
+            setRevealedReply({ text: stream.fullText, audioUrl: null, webSpeak: true });
+        }, TTS_REVEAL_FALLBACK_MS);
+
+        return () => window.clearTimeout(timeoutId);
+    }, [stream.fullText, stream.audioUrl, currentRequestMessageId]);
+
+    useEffect(() => {
+        if (revealedReply && currentRequestMessageId) {
             setMessages((previous) => {
                 const assistantId = `assistant-${currentRequestMessageId}`;
                 const existing = previous.find((item) => item.id === assistantId);
@@ -115,7 +158,7 @@ function RealAssistantPage({ userId }: RealAssistantPageProps) {
                 if (existing) {
                     return previous.map((item) => (
                         item.id === assistantId
-                            ? { ...item, content: stream.fullText, audioUrl: stream.audioUrl ?? item.audioUrl }
+                            ? { ...item, content: revealedReply.text, audioUrl: revealedReply.audioUrl ?? item.audioUrl }
                             : item
                     ));
                 }
@@ -125,24 +168,25 @@ function RealAssistantPage({ userId }: RealAssistantPageProps) {
                     {
                         id: assistantId,
                         role: 'assistant',
-                        content: stream.fullText,
+                        content: revealedReply.text,
                         mode: currentRequestMode,
-                        audioUrl: stream.audioUrl,
+                        audioUrl: revealedReply.audioUrl,
                     },
                 ];
             });
         }
-    }, [stream.fullText, stream.audioUrl, currentRequestMessageId, currentRequestMode]);
+    }, [revealedReply, currentRequestMessageId, currentRequestMode]);
 
+    // Auto-send: fires after the recorder detected speech followed by 5s of silence.
     useEffect(() => {
-        if (stream.audioUrl && currentRequestMessageId) {
-            setMessages((previous) => previous.map((item) => (
-                item.id === `assistant-${currentRequestMessageId}`
-                    ? { ...item, audioUrl: stream.audioUrl }
-                    : item
-            )));
+        if (autoSendPending) {
+            setAutoSendPending(false);
+            if (voice.transcript.trim() && !isBusy) {
+                void handleAnalyzeRef.current?.();
+            }
         }
-    }, [stream.audioUrl, currentRequestMessageId]);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [autoSendPending, isBusy, voice.transcript]);
 
     useEffect(() => {
         if (screen.isSharing && !previousSharingRef.current) {
@@ -167,6 +211,40 @@ function RealAssistantPage({ userId }: RealAssistantPageProps) {
 
         previousSharingRef.current = screen.isSharing;
     }, [screen.isSharing, appendEvent, locale]);
+
+    useEffect(() => {
+        if (!screen.isSharing) {
+            autoCaptureInFlightRef.current = false;
+            return;
+        }
+
+        const captureLatestFrame = async () => {
+            if (autoCaptureInFlightRef.current) {
+                return;
+            }
+
+            autoCaptureInFlightRef.current = true;
+            try {
+                const blob = await screen.captureFrame();
+                setCapturedFrame(blob);
+                setSubmitError(null);
+            } catch (error) {
+                const message = error instanceof Error ? error.message : (locale === 'ar' ? 'تعذر تحديث الإطار الحالي.' : 'Unable to refresh the current frame.');
+                appendEvent(locale === 'ar' ? 'فشل تحديث الإطار' : 'Frame refresh failed', message, 'warning');
+            } finally {
+                autoCaptureInFlightRef.current = false;
+            }
+        };
+
+        void captureLatestFrame();
+        const intervalId = window.setInterval(() => {
+            void captureLatestFrame();
+        }, SCREEN_FRAME_REFRESH_MS);
+
+        return () => {
+            window.clearInterval(intervalId);
+        };
+    }, [screen.isSharing, screen.captureFrame, appendEvent, locale]);
 
     useEffect(() => {
         if (capturedFrame && capturedFrame !== previousCaptureRef.current) {
@@ -213,7 +291,7 @@ function RealAssistantPage({ userId }: RealAssistantPageProps) {
                 locale === 'ar' ? 'تم التبديل إلى الاستطلاع الاحتياطي' : 'Switched to polling fallback',
                 locale === 'ar'
                     ? 'البث الفوري غير متاح حالياً، لذا ستتم متابعة الحالة عبر polling.'
-                    : 'Realtime streaming is unavailable, so status updates will continue through polling.',
+                    : 'Live updates are unavailable, so status updates will continue through polling.',
                 'warning'
             );
         }
@@ -246,8 +324,8 @@ function RealAssistantPage({ userId }: RealAssistantPageProps) {
     }, [screen]);
 
     const handleAnalyze = useCallback(async () => {
-        if (!voice.transcript.trim() && !voice.audioBlob) {
-            const message = locale === 'ar' ? 'يرجى كتابة الفكرة أو تسجيلها صوتياً قبل الإرسال.' : 'Write the idea or record it by voice before sending.';
+        if (!voice.transcript.trim() && !voice.audioBlob && !capturedFrame && !screen.isSharing) {
+            const message = locale === 'ar' ? 'يرجى كتابة الفكرة أو تسجيلها صوتياً أو التقاط إطار قبل الإرسال.' : 'Write the idea, record audio, or capture a frame before sending.';
             setSubmitError(message);
             return;
         }
@@ -293,7 +371,7 @@ function RealAssistantPage({ userId }: RealAssistantPageProps) {
             formData.append('frame', frameToSend, 'frame.jpg');
         }
         formData.append('mode', mode);
-        formData.append('language', voice.language === 'ar-SA' ? 'ar' : 'en');
+        formData.append('language', locale);
         formData.append('client_request_id', clientRequestId);
 
         if (voice.transcript.trim()) {
@@ -328,6 +406,7 @@ function RealAssistantPage({ userId }: RealAssistantPageProps) {
             setSessionId(data.session_id);
             setCurrentRequestMessageId(data.message_id);
             setCurrentRequestMode(mode);
+            setRevealedReply(null);
             stream.subscribe(data.message_id);
             voice.setTranscript('');
             voice.setAudioBlob(null);
@@ -342,6 +421,10 @@ function RealAssistantPage({ userId }: RealAssistantPageProps) {
             appendEvent(locale === 'ar' ? 'فشل إرسال الطلب' : 'Request failed', message, 'danger');
         }
     }, [capturedFrame, screen, voice, mode, sessionId, appendEvent, stream, locale]);
+
+    useEffect(() => {
+        handleAnalyzeRef.current = handleAnalyze;
+    }, [handleAnalyze]);
 
     const handleCancel = useCallback(async () => {
         if (!currentRequestMessageId) {
@@ -368,6 +451,7 @@ function RealAssistantPage({ userId }: RealAssistantPageProps) {
         } finally {
             stream.reset();
             setCurrentRequestMessageId(null);
+            setRevealedReply(null);
         }
     }, [currentRequestMessageId, stream, appendEvent, locale]);
 
@@ -377,11 +461,12 @@ function RealAssistantPage({ userId }: RealAssistantPageProps) {
         setSessionId(null);
         setCurrentRequestMessageId(null);
         setCurrentRequestMode('idea_check');
+        setRevealedReply(null);
         setCapturedFrame(null);
         setSubmitError(null);
         voice.setTranscript('');
         voice.setAudioBlob(null);
-        setMode('idea_check');
+        setMode('auto');
         setEvents([]);
         previousAudioUrlRef.current = null;
         previousErrorRef.current = null;
@@ -441,7 +526,9 @@ function RealAssistantPage({ userId }: RealAssistantPageProps) {
             sessionId={sessionId}
             currentRequestMessageId={currentRequestMessageId}
             isUsingPolling={stream.isUsingPolling}
-            audioUrl={stream.audioUrl}
+            audioUrl={revealedReply?.audioUrl ?? null}
+            fullText={revealedReply?.text ?? null}
+            autoPlay
             error={submitError || screen.error || voice.error}
             events={events}
             onStartSharing={handleStartSharing}
@@ -463,7 +550,7 @@ function RealAssistantPage({ userId }: RealAssistantPageProps) {
         sessionId,
         currentRequestMessageId,
         stream.isUsingPolling,
-        stream.audioUrl,
+        revealedReply,
         submitError,
         events,
         handleStartSharing,
@@ -481,7 +568,7 @@ function RealAssistantPage({ userId }: RealAssistantPageProps) {
             sessionId={sessionId}
             currentRequestMessageId={currentRequestMessageId}
             messages={messages}
-            currentPartialText={stream.partialText}
+            currentPartialText=""
             transcript={voice.transcript}
             language={voice.language}
             isRecording={voice.isRecording}

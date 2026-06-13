@@ -29,7 +29,7 @@ class AssistantCompletionFlowTest extends TestCase
                 return 'fake';
             }
 
-            public function analyzeScreenshot(string $imagePath, string $userPrompt, string $mode): AIResponse
+            public function analyzeScreenshot(string $imagePath, string $userPrompt, string $mode, string $responseLanguage = 'ar'): AIResponse
             {
                 return new AIResponse(
                     text: 'فكرتك جيدة، لكن راجع الحالة الحدية الأخيرة.',
@@ -39,7 +39,7 @@ class AssistantCompletionFlowTest extends TestCase
                 );
             }
 
-            public function analyzeText(string $userPrompt, string $mode): AIResponse
+            public function analyzeText(string $userPrompt, string $mode, string $responseLanguage = 'ar'): AIResponse
             {
                 return new AIResponse(
                     text: 'استلمت رسالتك النصية.',
@@ -54,9 +54,14 @@ class AssistantCompletionFlowTest extends TestCase
                 return false;
             }
 
-            public function analyzeScreenshotStreamed(string $imagePath, string $userPrompt, string $mode, callable $onChunk): AIResponse
+            public function analyzeScreenshotStreamed(string $imagePath, string $userPrompt, string $mode, callable $onChunk, string $responseLanguage = 'ar'): AIResponse
             {
-                return $this->analyzeScreenshot($imagePath, $userPrompt, $mode);
+                return $this->analyzeScreenshot($imagePath, $userPrompt, $mode, $responseLanguage);
+            }
+
+            public function analyzeTextStreamed(string $userPrompt, string $mode, callable $onChunk, string $responseLanguage = 'ar'): AIResponse
+            {
+                return $this->analyzeText($userPrompt, $mode, $responseLanguage);
             }
         });
 

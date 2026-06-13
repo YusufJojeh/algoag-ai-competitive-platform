@@ -11,7 +11,7 @@ class QueueCodeforcesSolutionAction
     /**
      * @return array{solution: CodeforcesSolution, jobUuid: string}
      */
-    public function handle(int $userId, string $problemText, string $language): array
+    public function handle(int $userId, string $problemText, string $language, string $responseLanguage = 'ar'): array
     {
         $jobUuid = (string) Str::uuid();
 
@@ -19,11 +19,13 @@ class QueueCodeforcesSolutionAction
             'user_id' => $userId,
             'problem_text' => $problemText,
             'solution_language' => $language === 'python' ? 'python' : 'cpp',
+            'response_language' => $responseLanguage === 'en' ? 'en' : 'ar',
             'status' => CodeforcesSolution::STATUS_PENDING,
+            'progress_stage' => CodeforcesSolution::STAGE_QUEUED,
             'job_id' => $jobUuid,
         ]);
 
-        ProcessCodeforcesSolutionJob::dispatch($solution->id)->afterResponse();
+        ProcessCodeforcesSolutionJob::dispatch($solution->id);
 
         return [
             'solution' => $solution,

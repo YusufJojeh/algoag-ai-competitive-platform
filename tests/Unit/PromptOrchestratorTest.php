@@ -40,11 +40,25 @@ class PromptOrchestratorTest extends TestCase
     public static function modeProvider(): array
     {
         return [
+            'topic_explanation' => ['topic_explanation'],
+            'topic_recommendation' => ['topic_recommendation'],
             'hint' => ['hint'],
+            'idea_check' => ['idea_check'],
             'check' => ['check'],
+            'logic_critique' => ['logic_critique'],
             'wrong' => ['wrong'],
+            'debug_wrong_answer' => ['debug_wrong_answer'],
             'full' => ['full'],
+            'full_solution' => ['full_solution'],
             'summarize' => ['summarize'],
+            'next_step' => ['next_step'],
+            'step_by_step_solution' => ['step_by_step_solution'],
+            'approach_compare' => ['approach_compare'],
+            'common_mistakes' => ['common_mistakes'],
+            'solve' => ['solve'],
+            'generate_code' => ['generate_code'],
+            'generate_tests' => ['generate_tests'],
+            'verify_code' => ['verify_code'],
             'edge_cases' => ['edge_cases'],
             'complexity' => ['complexity'],
         ];
@@ -55,6 +69,18 @@ class PromptOrchestratorTest extends TestCase
         $prompt = $this->orchestrator->buildUserPrompt('Binary Search', 'check');
         $this->assertStringContainsString('هل فكرتي صحيحة', $prompt);
         $this->assertStringContainsString('Binary Search', $prompt);
+        $this->assertStringContainsString('<user_content>', $prompt);
+        $this->assertStringContainsString('</user_content>', $prompt);
+    }
+
+    public function test_system_prompt_forces_current_page_language(): void
+    {
+        $englishPrompt = $this->orchestrator->buildSystemPrompt('hint', 'en');
+        $arabicPrompt = $this->orchestrator->buildSystemPrompt('hint', 'ar');
+
+        $this->assertStringContainsString('Reply in English because the current page UI language is English', $englishPrompt);
+        $this->assertStringContainsString('Ignore the language of the pasted problem statement', $englishPrompt);
+        $this->assertStringContainsString('أجب بالعربية الفصحى لأن لغة واجهة الصفحة الحالية هي العربية', $arabicPrompt);
     }
 
     public function test_user_prompt_hint_mode(): void
@@ -71,7 +97,7 @@ class PromptOrchestratorTest extends TestCase
 
     public function test_all_modes_are_valid(): void
     {
-        foreach (array_keys(ModePrompts::MODES) as $mode) {
+        foreach ([...array_keys(ModePrompts::MODES), ...array_keys(ModePrompts::LEGACY_ALIASES)] as $mode) {
             $this->assertTrue(ModePrompts::isValid($mode));
         }
     }

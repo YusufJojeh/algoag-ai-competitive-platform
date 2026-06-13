@@ -16,6 +16,7 @@ class StoreSubmissionRequest extends FormRequest
     {
         return [
             'problem_id' => ['nullable', 'integer', 'exists:problems,id'],
+            'contest_id' => ['nullable', 'integer', 'exists:contests,id'],
             'language' => ['required', 'string', Rule::in(['cpp', 'python'])],
             'code' => ['required', 'string', 'min:1', 'max:100000'],
         ];

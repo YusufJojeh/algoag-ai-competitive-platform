@@ -38,6 +38,27 @@ class ProblemController extends Controller
 
         $problem->load('tags');
 
+        // Optional contest context: only surfaced when the user can actually submit
+        // into the contest (joined + the contest currently accepts submissions), so the
+        // banner never leads to a dead-end 403. Otherwise the page behaves as a normal
+        // (practice) submission with no contest_id.
+        $contest = null;
+        $contestSlug = $request->query('contest');
+        if (is_string($contestSlug) && $contestSlug !== '') {
+            $found = \App\Modules\Arena\Models\Contest::query()
+                ->where('slug', $contestSlug)
+                ->where('is_public', true)
+                ->whereHas('problems', fn ($q) => $q->where('problems.id', $problem->id))
+                ->first();
+
+            if ($found
+                && $found->hasParticipant((int) $request->user()->id)
+                && $found->acceptsSubmissions()
+            ) {
+                $contest = ['id' => $found->id, 'slug' => $found->slug, 'title' => $found->title];
+            }
+        }
+
         return Inertia::render('Problems/Show', [
             'problem' => [
                 'id' => $problem->id,
@@ -49,6 +70,7 @@ class ProblemController extends Controller
                 'memory_limit_mb' => $problem->memory_limit_mb,
                 'tags' => $problem->tags->map(fn ($t) => ['id' => $t->id, 'name' => $t->name])->all(),
             ],
+            'contest' => $contest,
         ]);
     }
 }

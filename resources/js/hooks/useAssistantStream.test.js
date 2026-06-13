@@ -96,6 +96,54 @@ describe('useAssistantStream', () => {
         expect(listenMock).toHaveBeenCalledWith('.analysis.completed', expect.any(Function));
         expect(listenMock).toHaveBeenCalledWith('.analysis.failed', expect.any(Function));
         expect(listenMock).toHaveBeenCalledWith('.tts.ready', expect.any(Function));
+        expect(listenMock).toHaveBeenCalledWith('.transcription.completed', expect.any(Function));
         expect(result.current.isUsingPolling).toBe(false);
+    });
+
+    it('sets transcribedText when transcription.completed fires', () => {
+        let transcriptionHandler;
+        const listenMock = vi.fn().mockImplementation((event, handler) => {
+            if (event === '.transcription.completed') transcriptionHandler = handler;
+            return { listen: listenMock };
+        });
+        window.Echo = {
+            private: vi.fn().mockReturnValue({ listen: listenMock }),
+            leave: vi.fn(),
+        };
+
+        const { result } = renderHook(() => useAssistantStream(1));
+
+        act(() => {
+            result.current.subscribe(42);
+        });
+
+        expect(transcriptionHandler).toBeDefined();
+
+        act(() => {
+            transcriptionHandler({ message_id: 42, transcript: 'ما هو أسرع خوارزمية فرز؟', status: 'analyzing' });
+        });
+
+        expect(result.current.transcribedText).toBe('ما هو أسرع خوارزمية فرز؟');
+    });
+
+    it('resets transcribedText on reset()', async () => {
+        let transcriptionHandler;
+        const listenMock = vi.fn().mockImplementation((event, handler) => {
+            if (event === '.transcription.completed') transcriptionHandler = handler;
+            return { listen: listenMock };
+        });
+        window.Echo = {
+            private: vi.fn().mockReturnValue({ listen: listenMock }),
+            leave: vi.fn(),
+        };
+
+        const { result } = renderHook(() => useAssistantStream(1));
+
+        act(() => { result.current.subscribe(42); });
+        act(() => { transcriptionHandler({ message_id: 42, transcript: 'hello', status: 'analyzing' }); });
+        expect(result.current.transcribedText).toBe('hello');
+
+        act(() => { result.current.reset(); });
+        expect(result.current.transcribedText).toBe('');
     });
 });

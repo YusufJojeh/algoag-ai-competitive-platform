@@ -1,0 +1,25 @@
+@startuml
+title وحدة حل Codeforces
+left to right direction
+skinparam packageStyle rectangle
+
+actor "مستخدم مصادق" as AuthUser
+
+rectangle "ALGOAG" {
+    package "حل Codeforces" {
+        usecase "فتح صفحة الحل" as UC_Open
+        usecase "إرسال مسألة Codeforces" as UC_Solve
+        usecase "متابعة التقدم" as UC_Track
+        usecase "عرض النتيجة" as UC_Result
+        usecase "عرض السجل" as UC_History
+    }
+
+}
+
+AuthUser --> UC_Open
+AuthUser --> UC_Solve
+AuthUser --> UC_Track
+AuthUser --> UC_Result
+AuthUser --> UC_History
+
+@enduml

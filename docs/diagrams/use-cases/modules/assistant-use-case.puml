@@ -1,0 +1,31 @@
+@startuml
+title وحدة المساعد والتحليل
+left to right direction
+skinparam packageStyle rectangle
+
+actor "مستخدم مصادق" as AuthUser
+
+rectangle "ALGOAG" {
+    package "واجهة المساعد" {
+        usecase "فتح مساحة المساعد" as UC_Open
+        usecase "إرسال طلب تحليل" as UC_Analyze
+        usecase "عرض الجلسات" as UC_Sessions
+        usecase "عرض جلسة" as UC_ShowSession
+        usecase "إلغاء رسالة" as UC_Cancel
+        usecase "تشغيل الرد الصوتي" as UC_Audio
+    }
+
+    package "الحالة اللحظية" {
+        usecase "استعلام حالة الرسالة" as UC_Status
+    }
+}
+
+AuthUser --> UC_Open
+AuthUser --> UC_Analyze
+AuthUser --> UC_Sessions
+AuthUser --> UC_ShowSession
+AuthUser --> UC_Cancel
+AuthUser --> UC_Audio
+AuthUser --> UC_Status
+
+@enduml

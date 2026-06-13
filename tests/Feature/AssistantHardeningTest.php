@@ -211,7 +211,7 @@ class AssistantHardeningTest extends TestCase
     {
         $this->actingAs($this->user)
             ->postJson('/assistant/analyze', [
-                'frame' => UploadedFile::fake()->image('frame.jpg')->size(3000),
+                'frame' => UploadedFile::fake()->image('frame.jpg')->size(5000),
                 'transcript' => 'test',
                 'mode' => 'check',
                 'client_request_id' => Str::uuid()->toString(),

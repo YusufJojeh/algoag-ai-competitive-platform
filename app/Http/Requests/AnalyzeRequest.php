@@ -23,7 +23,7 @@ class AnalyzeRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'frame' => ['nullable', 'file', 'image', 'max:2048'],
+            'frame' => ['nullable', 'file', 'image', 'max:4096'],
             'transcript' => ['nullable', 'string', 'max:5000', 'required_without_all:audio,frame'],
             'audio' => ['nullable', 'file', 'mimes:webm,wav,mp3,ogg', 'max:10240'],
             'mode' => ['required', 'string', Rule::in(ModePrompts::allowedRequestModes())],
@@ -37,7 +37,7 @@ class AnalyzeRequest extends FormRequest
     {
         return [
             'frame.image' => 'الملف يجب أن يكون صورة.',
-            'frame.max' => 'حجم الصورة يجب ألا يتجاوز 2 ميجابايت.',
+            'frame.max' => 'حجم الصورة يجب ألا يتجاوز 4 ميجابايت.',
             'transcript.required_without_all' => 'يرجى كتابة فكرتك أو إرسال تسجيل صوتي أو التقاط شاشة.',
             'mode.required' => 'يرجى اختيار نوع المساعدة.',
             'client_request_id.required' => 'معرّف الطلب مطلوب.',

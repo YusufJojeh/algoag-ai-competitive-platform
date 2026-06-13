@@ -1,0 +1,18 @@
+@startuml
+title وحدة الإرسالات
+left to right direction
+skinparam packageStyle rectangle
+
+actor "مستخدم مصادق" as AuthUser
+
+rectangle "ALGOAG" {
+    usecase "استعراض الإرسالات" as UC_Index
+    usecase "تسجيل إرسال جديد" as UC_Store
+    usecase "فتح المسألة المرتبطة" as UC_OpenProblem
+}
+
+AuthUser --> UC_Index
+AuthUser --> UC_Store
+AuthUser --> UC_OpenProblem
+
+@enduml

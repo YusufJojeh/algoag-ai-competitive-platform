@@ -8,6 +8,7 @@ use App\Models\AlgorithmSession;
 use App\Models\CodeforcesSolution;
 use App\Modules\Assistant\Actions\RunBenchmarkWorkflowAction;
 use App\Modules\Assistant\Actions\SuggestAlgorithmsAction;
+use App\Services\AI\AiUsageService;
 use App\Services\OllamaService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
@@ -20,15 +21,26 @@ class AlgorithmAssistantController extends Controller
     public function __construct(
         protected OllamaService $ollama,
         protected SuggestAlgorithmsAction $suggestAlgorithms,
-        protected RunBenchmarkWorkflowAction $benchmarkWorkflow
+        protected RunBenchmarkWorkflowAction $benchmarkWorkflow,
+        protected ?AiUsageService $usage = null
     ) {}
+
+    protected function aiProviderReady(): bool
+    {
+        $primary = strtolower((string) config('services.ai.primary', 'openai'));
+        if ($primary === 'openai' && (string) config('services.ai.openai.api_key', '') !== '') {
+            return true;
+        }
+
+        return $this->ollama->isAvailable();
+    }
 
     /**
      * Main page: describe problem and get suggestions.
      */
     public function index(Request $request): Response
     {
-        $ollamaAvailable = $this->ollama->isAvailable();
+        $ollamaAvailable = $this->aiProviderReady();
         $recentSessions = [];
         try {
             $recentSessions = AlgorithmSession::query()
@@ -82,7 +94,7 @@ class AlgorithmAssistantController extends Controller
     }
 
     /**
-     * Analyze problem and suggest algorithms (Ollama).
+     * Analyze problem and suggest algorithms.
      */
     public function suggest(SuggestProblemRequest $request): Response
     {
@@ -91,13 +103,37 @@ class AlgorithmAssistantController extends Controller
         try {
             $suggestions = $this->suggestAlgorithms->handle($problem);
         } catch (\Throwable $e) {
-            return back()->withErrors(['ollama' => 'تعذر الاتصال بـ Ollama. تأكد أنه يعمل محلياً (ollama serve). '.$e->getMessage()]);
+            Log::warning('algorithm.suggest.failed', [
+                'user_id' => $request->user()?->id,
+                'provider' => $this->suggestAlgorithms->providerName(),
+                'failure_category' => 'provider_failure',
+            ]);
+            $this->usage()->record(
+                $request->user()?->id,
+                AiUsageService::FEATURE_ALGORITHM_SUGGEST,
+                'failed',
+                $this->suggestAlgorithms->providerName(),
+                $this->suggestAlgorithms->providerModel(),
+                null,
+                null,
+                'provider_failure',
+            );
+
+            return back()->withErrors(['ollama' => 'Unable to contact the AI provider. Configure OpenAI or start Ollama, then try again.']);
         }
+
+        $this->usage()->record(
+            $request->user()?->id,
+            AiUsageService::FEATURE_ALGORITHM_SUGGEST,
+            'completed',
+            $this->suggestAlgorithms->providerName(),
+            $this->suggestAlgorithms->providerModel(),
+        );
 
         return Inertia::render('Suggestions', [
             'problem' => $problem,
             'suggestions' => $suggestions,
-            'ollamaAvailable' => $this->ollama->isAvailable(),
+            'ollamaAvailable' => $this->aiProviderReady(),
         ]);
     }
 
@@ -139,5 +175,10 @@ class AlgorithmAssistantController extends Controller
             'recommendation' => $session->recommendation ?? '',
             'sessionId' => $session->id,
         ]);
+    }
+
+    private function usage(): AiUsageService
+    {
+        return $this->usage ??= app(AiUsageService::class);
     }
 }

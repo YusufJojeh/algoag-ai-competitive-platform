@@ -90,6 +90,7 @@ class CodeforcesSolveControllerTest extends TestCase
         $response = $this->post('/solve', [
             'problem' => 'Given n numbers, find the maximum.',
             'language' => 'cpp',
+            'response_language' => 'en',
         ]);
 
         $response->assertRedirect();
@@ -98,6 +99,7 @@ class CodeforcesSolveControllerTest extends TestCase
         $solution = CodeforcesSolution::query()->latest()->first();
         $this->assertNotNull($solution);
         $this->assertSame($this->user->id, $solution->user_id);
+        $this->assertSame('en', $solution->response_language);
         $this->assertSame(CodeforcesSolution::STATUS_PENDING, $solution->status);
 
         Queue::assertPushed(ProcessCodeforcesSolutionJob::class, fn (ProcessCodeforcesSolutionJob $job) => $job->solutionId === $solution->id);
@@ -115,13 +117,20 @@ class CodeforcesSolveControllerTest extends TestCase
         $solution = CodeforcesSolution::create([
             'user_id' => $this->user->id,
             'problem_text' => 'Find max in array.',
+            'problem_text_translations' => ['ar' => 'أوجد أكبر قيمة في المصفوفة.', 'en' => 'Find max in array.'],
             'status' => CodeforcesSolution::STATUS_COMPLETED,
             'parsed_problem' => ['title' => 'Max', 'description' => '...'],
+            'parsed_problem_translations' => [
+                'ar' => ['title' => 'أكبر قيمة', 'description' => 'أوجد أكبر قيمة.', 'examples' => []],
+                'en' => ['title' => 'Max', 'description' => 'Find the maximum.', 'examples' => []],
+            ],
             'solution_code' => '#include <iostream>',
             'solution_language' => 'cpp',
+            'explanation_translations' => ['ar' => 'شرح عربي', 'en' => 'English explanation'],
             'explanation' => 'شرح',
             'generated_tests' => [],
             'run_results' => ['engine' => 'stub'],
+            'algorithm_breakdown_translations' => ['ar' => 'تحليل عربي', 'en' => 'English analysis'],
             'algorithm_breakdown' => 'خوارزمية',
         ]);
 
@@ -133,6 +142,9 @@ class CodeforcesSolveControllerTest extends TestCase
             ->has('solution')
             ->where('solution.id', $solution->id)
             ->where('solution.status', 'completed')
+            ->where('solution.parsed_problem_translations.en.title', 'Max')
+            ->where('solution.explanation_translations.en', 'English explanation')
+            ->where('solution.algorithm_breakdown_translations.en', 'English analysis')
             ->has('statusPollUrl')
         );
     }

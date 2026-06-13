@@ -10,6 +10,7 @@ import HowItWorksTimeline from '@/components/landing/HowItWorksTimeline';
 import TrustSection from '@/components/landing/TrustSection';
 import VoiceVisionShowcase from '@/components/landing/VoiceVisionShowcase';
 import { Button } from '@/components/ui/button';
+import { LanguageSwitchButton } from '@/components/layout/LanguageSwitch';
 import { useUiLocale } from '@/lib/ui-locale';
 
 type AuthUser = {
@@ -63,19 +64,12 @@ export default function Landing() {
                                 </div>
                                 <div>
                                     <p className="text-sm font-semibold tracking-[0.2em] text-slate-300">ALGOAG</p>
-                                    <p className="text-xs text-slate-400">{locale === 'ar' ? 'حل مسائل بالصوت والرؤية' : 'Voice + Vision problem solving'}</p>
+                                    <p className="text-xs text-slate-400">{locale === 'ar' ? 'مدرب مسائل مسابقات' : 'Competitive programming coach'}</p>
                                 </div>
                             </Link>
 
-                            <nav className="hidden items-center gap-6 lg:flex">
-                                {navLinks.map((item) => (
-                                    <a key={item.href} href={item.href} className="text-sm text-slate-300 transition hover:text-white">
-                                        {item.label}
-                                    </a>
-                                ))}
-                            </nav>
-
                             <div className="flex items-center gap-3">
+                                <LanguageSwitchButton className="rounded-2xl border-white/10 bg-white/6 px-3" />
                                 {isAuthenticated ? (
                                     <>
                                         <Button asChild variant="ghost" className="hidden sm:inline-flex">
@@ -100,6 +94,14 @@ export default function Landing() {
                                 )}
                             </div>
                         </div>
+
+                        <nav className="mx-auto flex max-w-7xl items-center gap-4 overflow-x-auto px-4 pb-4 text-sm sm:px-6 lg:gap-6 lg:px-8">
+                            {navLinks.map((item) => (
+                                <a key={item.href} href={item.href} className="shrink-0 text-slate-300 transition hover:text-white">
+                                    {item.label}
+                                </a>
+                            ))}
+                        </nav>
                     </header>
 
                     <main className="relative z-10">
@@ -113,11 +115,11 @@ export default function Landing() {
 
                     <footer className="relative z-10 border-t border-white/10 px-4 py-8 sm:px-6 lg:px-8">
                         <div className="mx-auto flex max-w-7xl flex-col gap-4 text-sm text-slate-400 sm:flex-row sm:items-center sm:justify-between">
-                            <p>{locale === 'ar' ? 'واجهة هبوط مميزة لمنتج تدريب ذكاء اصطناعي موثوق، لا لقالب SaaS عام.' : 'Premium landing system for a credible AI coaching product, not a generic SaaS shell.'}</p>
+                            <p>{locale === 'ar' ? 'ALGOAG مدرب مسائل مسابقات برمجية يجمع النص، الصوت، الصورة، والتغذية الراجعة في مساحة واحدة.' : 'ALGOAG is a competitive-programming coach that brings text, voice, vision, and feedback into one workspace.'}</p>
                             <div className="flex items-center gap-4">
                                 <a href="#hero" className="inline-flex items-center gap-2 transition hover:text-white">
                                     {locale === 'ar' ? 'العودة للأعلى' : 'Back to top'}
-                                    <ArrowUpLeft className="size-4" />
+                                    <ArrowUpLeft className="flip-rtl size-4" />
                                 </a>
                                 <Link href={isAuthenticated ? '/assistant' : '/login'} className="transition hover:text-white">
                                     {isAuthenticated ? (locale === 'ar' ? 'المساعد' : 'Assistant') : (locale === 'ar' ? 'تسجيل الدخول' : 'Log in')}

@@ -7,8 +7,14 @@ return [
     'openai' => [
         'api_key' => env('OPENAI_API_KEY'),
         'model' => env('ASSISTANT_AI_MODEL', 'gpt-4o-mini'),
-        'max_tokens' => 500,
-        'timeout' => 60,
+        'max_tokens' => (int) env('ASSISTANT_AI_MAX_TOKENS', 500),
+        'timeout' => (int) env('ASSISTANT_AI_TIMEOUT', 60),
+        'stt_model' => env('ASSISTANT_STT_MODEL', 'whisper-1'),
+        'stt_timeout' => (int) env('ASSISTANT_STT_TIMEOUT', 30),
+        'tts_model' => env('ASSISTANT_TTS_MODEL', 'tts-1'),
+        'tts_timeout' => (int) env('ASSISTANT_TTS_TIMEOUT', 30),
+        'tts_voice_ar' => env('ASSISTANT_TTS_VOICE_AR', 'nova'),
+        'tts_voice_en' => env('ASSISTANT_TTS_VOICE_EN', 'alloy'),
     ],
 
     'gemini' => [

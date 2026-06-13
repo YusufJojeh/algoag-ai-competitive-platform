@@ -32,14 +32,25 @@ class CodeforcesSolutionModelTest extends TestCase
     {
         $solution = CodeforcesSolution::create([
             'problem_text' => 'P',
+            'problem_text_translations' => ['ar' => 'مسألة', 'en' => 'Problem'],
             'parsed_problem' => ['title' => 'T', 'examples' => []],
+            'parsed_problem_translations' => [
+                'ar' => ['title' => 'العنوان', 'examples' => []],
+                'en' => ['title' => 'Title', 'examples' => []],
+            ],
+            'explanation_translations' => ['ar' => 'شرح', 'en' => 'Explanation'],
             'generated_tests' => [['input' => '1', 'expected_output' => '2']],
             'run_results' => null,
+            'algorithm_breakdown_translations' => ['ar' => 'تحليل', 'en' => 'Analysis'],
             'status' => CodeforcesSolution::STATUS_COMPLETED,
         ]);
 
         $this->assertIsArray($solution->parsed_problem);
         $this->assertSame('T', $solution->parsed_problem['title']);
+        $this->assertSame('Problem', $solution->problem_text_translations['en']);
+        $this->assertSame('العنوان', $solution->parsed_problem_translations['ar']['title']);
+        $this->assertSame('Explanation', $solution->explanation_translations['en']);
+        $this->assertSame('Analysis', $solution->algorithm_breakdown_translations['en']);
         $this->assertIsArray($solution->generated_tests);
         $this->assertSame('1', $solution->generated_tests[0]['input']);
     }
@@ -53,10 +64,13 @@ class CodeforcesSolutionModelTest extends TestCase
     {
         $fillable = (new CodeforcesSolution)->getFillable();
         $this->assertContains('problem_text', $fillable);
+        $this->assertContains('problem_text_translations', $fillable);
         $this->assertContains('parsed_problem', $fillable);
+        $this->assertContains('parsed_problem_translations', $fillable);
         $this->assertContains('solution_code', $fillable);
         $this->assertContains('status', $fillable);
         $this->assertContains('algorithm_breakdown', $fillable);
+        $this->assertContains('algorithm_breakdown_translations', $fillable);
     }
 
     public function test_status_constants(): void

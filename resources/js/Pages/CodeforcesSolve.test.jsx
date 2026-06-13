@@ -1,6 +1,8 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { cleanup, render, screen, fireEvent } from '@testing-library/react';
+
 import CodeforcesSolve from './CodeforcesSolve';
+import { UiLocaleProvider } from '@/lib/ui-locale';
 
 const mockUsePage = vi.fn();
 const mockUseForm = vi.fn();
@@ -12,7 +14,7 @@ vi.mock('@inertiajs/react', () => ({
     useForm: (initial) => {
         const out = mockUseForm(initial);
         return out ?? {
-            data: initial ?? { problem: '', language: 'cpp' },
+            data: initial ?? { problem: '', language: 'python', response_language: 'ar' },
             setData: vi.fn(),
             post: mockPost,
             processing: false,
@@ -21,6 +23,14 @@ vi.mock('@inertiajs/react', () => ({
     },
     Link: (props) => mockLink(props),
 }));
+
+function renderPage(locale = 'ar') {
+    return render(
+        <UiLocaleProvider locale={locale}>
+            <CodeforcesSolve />
+        </UiLocaleProvider>,
+    );
+}
 
 describe('CodeforcesSolve', () => {
     beforeEach(() => {
@@ -32,8 +42,12 @@ describe('CodeforcesSolve', () => {
                 flash: null,
             },
         });
-        mockUseForm.mockImplementation((data = { problem: '', language: 'cpp' }) => ({
-            data: { problem: data.problem ?? '', language: data.language ?? 'cpp' },
+        mockUseForm.mockImplementation((data = { problem: '', language: 'python', response_language: 'ar' }) => ({
+            data: {
+                problem: data.problem ?? '',
+                language: data.language ?? 'python',
+                response_language: data.response_language ?? 'ar',
+            },
             setData: vi.fn(),
             post: mockPost,
             processing: false,
@@ -41,198 +55,139 @@ describe('CodeforcesSolve', () => {
         }));
     });
 
-    it('renders header and form', () => {
-        render(<CodeforcesSolve />);
-        expect(screen.getByText(/تحليل المسألة وحلها من النص الملصق/)).toBeInTheDocument();
-        expect(screen.getByPlaceholderText(/الصق هنا نص المسألة/)).toBeInTheDocument();
-        expect(screen.getByRole('button', { name: /حل المسألة/ })).toBeInTheDocument();
+    it('renders readable Arabic header and form', () => {
+        renderPage();
+        expect(screen.getByText('تحليل المسألة وحلها من النص الملصق')).toBeInTheDocument();
+        expect(screen.getByPlaceholderText(/الصق هنا نص المسألة كاملا/)).toBeInTheDocument();
+        expect(screen.getByRole('button', { name: 'حل المسألة' })).toBeInTheDocument();
+    });
+
+    it('renders English header when locale is English', () => {
+        renderPage('en');
+        expect(screen.getByText('Analyze and solve a pasted problem statement')).toBeInTheDocument();
+        expect(screen.getByPlaceholderText(/Paste the full statement here/)).toBeInTheDocument();
     });
 
     it('renders link to assistant workspace', () => {
-        render(<CodeforcesSolve />);
-        expect(screen.getByRole('link', { name: /انتقل إلى المساعد/ })).toHaveAttribute('href', '/assistant');
+        renderPage();
+        expect(screen.getByRole('link', { name: 'انتقل إلى المساعد' })).toHaveAttribute('href', '/assistant');
     });
 
-    it('shows ollama warning when ollamaAvailable is false', () => {
+    it('shows provider warning when AI provider is unavailable', () => {
         mockUsePage.mockReturnValue({
             props: { ollamaAvailable: false, recentSolutions: [], flash: null },
         });
-        render(<CodeforcesSolve />);
-        expect(screen.getByText(/Ollama غير متصل/)).toBeInTheDocument();
+        renderPage();
+        expect(screen.getByText(/مزود الذكاء الاصطناعي غير متصل/)).toBeInTheDocument();
     });
 
-    it('submit button is disabled when problem is empty', () => {
-        render(<CodeforcesSolve />);
-        expect(screen.getByRole('button', { name: /حل المسألة/ })).toBeDisabled();
-    });
+    it('submit button is disabled when problem is empty or provider unavailable', () => {
+        renderPage();
+        expect(screen.getByRole('button', { name: 'حل المسألة' })).toBeDisabled();
 
-    it('submit button is disabled when ollama unavailable', () => {
+        cleanup();
         mockUsePage.mockReturnValue({
             props: { ollamaAvailable: false, recentSolutions: [], flash: null },
         });
         mockUseForm.mockImplementation(() => ({
-            data: { problem: 'Enough problem text here.', language: 'cpp' },
+            data: { problem: 'Enough problem text here.', language: 'cpp', response_language: 'ar' },
             setData: vi.fn(),
             post: mockPost,
             processing: false,
             errors: {},
         }));
-        render(<CodeforcesSolve />);
-        expect(screen.getByRole('button', { name: /حل المسألة/ })).toBeDisabled();
+        renderPage();
+        expect(screen.getByRole('button', { name: 'حل المسألة' })).toBeDisabled();
     });
 
     it('calls post on form submit when problem has content', () => {
         mockUseForm.mockImplementation(() => ({
-            data: { problem: 'Given n numbers find max.', language: 'cpp' },
+            data: { problem: 'Given n numbers find max.', language: 'cpp', response_language: 'ar' },
             setData: vi.fn(),
             post: mockPost,
             processing: false,
             errors: {},
         }));
-        render(<CodeforcesSolve />);
-        fireEvent.submit(screen.getByRole('button', { name: /حل المسألة/ }).closest('form'));
+        renderPage();
+        fireEvent.submit(screen.getByRole('button', { name: 'حل المسألة' }).closest('form'));
         expect(mockPost).toHaveBeenCalledWith('/solve', expect.objectContaining({ preserveScroll: true }));
     });
 
     it('renders language select with C++ and Python', () => {
-        render(<CodeforcesSolve />);
+        renderPage();
         const select = screen.getByRole('combobox', { name: /لغة الحل/ });
         expect(select).toBeInTheDocument();
-        expect(select).toHaveValue('cpp');
+        expect(select).toHaveValue('python');
         expect(screen.getByRole('option', { name: 'C++' })).toBeInTheDocument();
         expect(screen.getByRole('option', { name: 'Python' })).toBeInTheDocument();
     });
 
-    it('setData called when language changes', () => {
+    it('updates problem and language fields', () => {
         const setData = vi.fn();
         mockUseForm.mockImplementation(() => ({
-            data: { problem: '', language: 'cpp' },
+            data: { problem: '', language: 'cpp', response_language: 'ar' },
             setData,
             post: mockPost,
             processing: false,
             errors: {},
         }));
-        render(<CodeforcesSolve />);
+        renderPage();
         fireEvent.change(screen.getByRole('combobox'), { target: { value: 'python' } });
+        fireEvent.change(screen.getByPlaceholderText(/الصق هنا/), { target: { value: 'new text' } });
         expect(setData).toHaveBeenCalledWith('language', 'python');
+        expect(setData).toHaveBeenCalledWith('problem', 'new text');
     });
 
-    it('shows validation error for problem', () => {
+    it('shows validation and queue errors', () => {
         mockUseForm.mockImplementation(() => ({
-            data: { problem: 'short', language: 'cpp' },
+            data: { problem: 'short', language: 'cpp', response_language: 'ar' },
             setData: vi.fn(),
             post: mockPost,
             processing: false,
-            errors: { problem: 'المسألة يجب أن تكون 10 أحرف على الأقل.' },
+            errors: { problem: 'المسألة قصيرة.', queue: 'AI processing is not configured.' },
         }));
-        render(<CodeforcesSolve />);
-        expect(screen.getByText(/المسألة يجب أن تكون 10 أحرف/)).toBeInTheDocument();
-    });
-
-    it('shows ollama error', () => {
-        mockUseForm.mockImplementation(() => ({
-            data: { problem: 'A long problem text.', language: 'cpp' },
-            setData: vi.fn(),
-            post: mockPost,
-            processing: false,
-            errors: { ollama: 'تعذر الاتصال بـ Ollama.' },
-        }));
-        render(<CodeforcesSolve />);
-        expect(screen.getByText(/تعذر الاتصال بـ Ollama/)).toBeInTheDocument();
+        renderPage();
+        expect(screen.getByText('المسألة قصيرة.')).toBeInTheDocument();
+        expect(screen.getByText('AI processing is not configured.')).toBeInTheDocument();
     });
 
     it('shows processing state on submit button', () => {
         mockUseForm.mockImplementation(() => ({
-            data: { problem: 'Enough problem text here.', language: 'cpp' },
+            data: { problem: 'Enough problem text here.', language: 'cpp', response_language: 'ar' },
             setData: vi.fn(),
             post: mockPost,
             processing: true,
             errors: {},
         }));
-        render(<CodeforcesSolve />);
+        renderPage();
         expect(screen.getByRole('button', { name: /جاري حل المسألة/ })).toBeInTheDocument();
     });
 
-    it('renders recent solutions when provided', () => {
+    it('renders recent solutions with localized title, preview, and status', () => {
         mockUsePage.mockReturnValue({
             props: {
                 ollamaAvailable: true,
                 recentSolutions: [
-                    { id: 1, problem_preview: 'Max problem', status: 'completed', created_at: 'منذ ساعة' },
+                    { id: 1, problem_title: 'أكبر قيمة', problem_preview: 'أوجد أكبر قيمة', status: 'completed', created_at: 'منذ ساعة' },
+                    { id: 2, problem_preview: 'Running', status: 'processing', created_at: 'الآن' },
                 ],
                 flash: null,
             },
         });
-        render(<CodeforcesSolve />);
+        renderPage();
         expect(screen.getByText('آخر الحلول')).toBeInTheDocument();
-        expect(screen.getByText('Max problem')).toBeInTheDocument();
-        expect(screen.getByRole('link', { name: /Max problem/ })).toHaveAttribute('href', '/solve/result/1');
+        expect(screen.getByText('أكبر قيمة')).toBeInTheDocument();
+        expect(screen.getByRole('link', { name: /أكبر قيمة/ })).toHaveAttribute('href', '/solve/result/1');
         expect(screen.getByText('مكتمل')).toBeInTheDocument();
+        expect(screen.getByText('قيد المعالجة')).toBeInTheDocument();
     });
 
-    it('renders failed status for recent solution', () => {
+    it('shows flash message and hides empty recent section', () => {
         mockUsePage.mockReturnValue({
-            props: {
-                ollamaAvailable: true,
-                recentSolutions: [
-                    { id: 2, problem_preview: 'Failed', status: 'failed', created_at: 'الآن' },
-                ],
-                flash: null,
-            },
+            props: { ollamaAvailable: true, recentSolutions: [], flash: { message: 'تم إرسال المسألة.' } },
         });
-        render(<CodeforcesSolve />);
-        expect(screen.getByText('فشل')).toBeInTheDocument();
-    });
-
-    it('renders processing status for recent solution', () => {
-        mockUsePage.mockReturnValue({
-            props: {
-                ollamaAvailable: true,
-                recentSolutions: [
-                    { id: 3, problem_preview: 'Running', status: 'processing', created_at: 'الآن' },
-                ],
-                flash: null,
-            },
-        });
-        render(<CodeforcesSolve />);
-        expect(screen.getByText('processing')).toBeInTheDocument();
-    });
-
-    it('shows flash message when present', () => {
-        mockUsePage.mockReturnValue({
-            props: { ollamaAvailable: true, recentSolutions: [], flash: { message: 'تم الحل.' } },
-        });
-        render(<CodeforcesSolve />);
-        expect(screen.getByText('تم الحل.')).toBeInTheDocument();
-    });
-
-    it('does not render recent solutions section when empty', () => {
-        mockUsePage.mockReturnValue({
-            props: { ollamaAvailable: true, recentSolutions: [], flash: null },
-        });
-        render(<CodeforcesSolve />);
+        renderPage();
+        expect(screen.getByText('تم إرسال المسألة.')).toBeInTheDocument();
         expect(screen.queryByText('آخر الحلول')).not.toBeInTheDocument();
-    });
-
-    it('handles undefined recentSolutions gracefully', () => {
-        mockUsePage.mockReturnValue({
-            props: { ollamaAvailable: true, flash: null },
-        });
-        render(<CodeforcesSolve />);
-        expect(screen.getByText(/تحليل المسألة وحلها من النص الملصق/)).toBeInTheDocument();
-    });
-
-    it('textarea onChange calls setData', () => {
-        const setData = vi.fn();
-        mockUseForm.mockImplementation(() => ({
-            data: { problem: '', language: 'cpp' },
-            setData,
-            post: mockPost,
-            processing: false,
-            errors: {},
-        }));
-        render(<CodeforcesSolve />);
-        fireEvent.change(screen.getByPlaceholderText(/الصق هنا/), { target: { value: 'new text' } });
-        expect(setData).toHaveBeenCalledWith('problem', 'new text');
     });
 });

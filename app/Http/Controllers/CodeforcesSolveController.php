@@ -5,6 +5,8 @@ namespace App\Http\Controllers;
 use App\Http\Requests\CodeforcesSolveRequest;
 use App\Models\CodeforcesSolution;
 use App\Modules\Codeforces\Actions\QueueCodeforcesSolutionAction;
+use App\Services\AI\AiUsageService;
+use App\Services\AI\QueueSafetyService;
 use App\Services\OllamaService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -18,8 +20,24 @@ class CodeforcesSolveController extends Controller
 {
     public function __construct(
         protected OllamaService $ollama,
-        protected QueueCodeforcesSolutionAction $queueSolution
+        protected QueueCodeforcesSolutionAction $queueSolution,
+        protected AiUsageService $usage,
+        protected QueueSafetyService $queueSafety,
     ) {}
+
+    /**
+     * Whether a usable text-generation provider is reachable. OpenAI (primary,
+     * with a key) needs no local service; otherwise fall back to checking Ollama.
+     */
+    protected function aiProviderReady(): bool
+    {
+        $primary = strtolower((string) config('services.ai.primary', 'openai'));
+        if ($primary === 'openai' && (string) config('services.ai.openai.api_key', '') !== '') {
+            return true;
+        }
+
+        return $this->ollama->isAvailable();
+    }
 
     /**
      * Show the form: paste Codeforces problem text and submit.
@@ -34,10 +52,11 @@ class CodeforcesSolveController extends Controller
                 ->where('user_id', $request->user()->id)
                 ->latest()
                 ->take(10)
-                ->get(['id', 'problem_text', 'status', 'created_at'])
+                ->get(['id', 'problem_text', 'problem_text_translations', 'parsed_problem', 'parsed_problem_translations', 'status', 'created_at'])
                 ->map(fn ($s) => [
                     'id' => $s->id,
-                    'problem_preview' => Str::limit($s->problem_text, 100),
+                    'problem_title' => $this->localizedProblemTitle($s, app()->getLocale()),
+                    'problem_preview' => Str::limit($this->localizedProblemText($s, app()->getLocale()), 100),
                     'status' => $s->status,
                     'created_at' => $s->created_at->diffForHumans(),
                 ])
@@ -50,7 +69,7 @@ class CodeforcesSolveController extends Controller
         }
 
         return Inertia::render('CodeforcesSolve', [
-            'ollamaAvailable' => $this->ollama->isAvailable(),
+            'ollamaAvailable' => $this->aiProviderReady(),
             'recentSolutions' => $recent,
             'flash' => [
                 'message' => $request->session()->get('message'),
@@ -66,16 +85,31 @@ class CodeforcesSolveController extends Controller
         $this->authorize('create', CodeforcesSolution::class);
 
         $problem = $request->validated('problem');
-        $language = $request->validated('language', 'cpp');
+        $language = $request->validated('language', 'python');
+        $responseLanguage = $request->validated('response_language') ?? app()->getLocale();
 
-        if (! $this->ollama->isAvailable()) {
-            return back()->withErrors(['ollama' => 'تعذر الاتصال بـ Ollama. شغّل ollama serve ثم ollama pull نموذجاً مناسباً.']);
+        // Only require Ollama when it is actually the active provider. With
+        // OpenAI configured as primary the solve runs without Ollama running.
+        if (! $this->aiProviderReady()) {
+            return back()->withErrors(['ollama' => 'تعذر الاتصال بمزود الذكاء الاصطناعي. فعّل OpenAI بإضافة OPENAI_API_KEY، أو شغّل Ollama عبر ollama serve ثم ollama pull نموذجاً مناسباً.']);
+        }
+
+        try {
+            $this->queueSafety->assertLongRunningQueueSafe();
+            $this->usage->assertWithinLimit($request->user(), AiUsageService::FEATURE_CODEFORCES_SOLVE);
+        } catch (\RuntimeException $e) {
+            return back()->withErrors([
+                'queue' => $e->getMessage() === 'AI usage limit reached.'
+                    ? 'AI usage limit reached. Try again later.'
+                    : 'AI processing is not configured for background execution.',
+            ]);
         }
 
         $queued = $this->queueSolution->handle(
             $request->user()->id,
             $problem,
-            $language
+            $language,
+            $responseLanguage === 'en' ? 'en' : 'ar'
         );
 
         return redirect()->route('solve.result', ['id' => $queued['solution']->id]);
@@ -91,6 +125,7 @@ class CodeforcesSolveController extends Controller
 
         return response()->json([
             'status' => $solution->status,
+            'progress_stage' => $solution->progress_stage,
             'error_message' => $solution->error_message,
         ]);
     }
@@ -107,18 +142,62 @@ class CodeforcesSolveController extends Controller
             'solution' => [
                 'id' => $solution->id,
                 'problem_text' => $solution->problem_text,
+                'problem_text_translations' => $solution->problem_text_translations,
                 'parsed_problem' => $solution->parsed_problem,
+                'parsed_problem_translations' => $solution->parsed_problem_translations,
                 'solution_code' => $solution->solution_code,
                 'solution_language' => $solution->solution_language,
+                'response_language' => $solution->response_language,
                 'explanation' => $solution->explanation,
+                'explanation_translations' => $solution->explanation_translations,
                 'generated_tests' => $solution->generated_tests ?? [],
                 'run_results' => $solution->run_results,
                 'algorithm_breakdown' => $solution->algorithm_breakdown,
+                'algorithm_breakdown_translations' => $solution->algorithm_breakdown_translations,
                 'status' => $solution->status,
+                'progress_stage' => $solution->progress_stage,
                 'error_message' => $solution->error_message,
                 'created_at' => $solution->created_at?->toIso8601String(),
             ],
             'statusPollUrl' => route('solve.result.status', ['id' => $solution->id]),
         ]);
+    }
+
+    protected function localizedProblemTitle(CodeforcesSolution $solution, string $locale): string
+    {
+        $locale = $locale === 'en' ? 'en' : 'ar';
+        $localized = $solution->parsed_problem_translations[$locale] ?? null;
+        if (is_array($localized) && trim((string) ($localized['title'] ?? '')) !== '') {
+            return (string) $localized['title'];
+        }
+
+        $parsed = $solution->parsed_problem;
+        if (is_array($parsed) && trim((string) ($parsed['title'] ?? '')) !== '') {
+            return (string) $parsed['title'];
+        }
+
+        return '';
+    }
+
+    protected function localizedProblemText(CodeforcesSolution $solution, string $locale): string
+    {
+        $locale = $locale === 'en' ? 'en' : 'ar';
+        $localized = $solution->problem_text_translations[$locale] ?? null;
+        if (is_string($localized) && trim($localized) !== '') {
+            return $localized;
+        }
+
+        $parsed = $solution->parsed_problem_translations[$locale] ?? null;
+        if (is_array($parsed)) {
+            $text = trim(implode("\n\n", array_filter([
+                (string) ($parsed['title'] ?? ''),
+                (string) ($parsed['description'] ?? ''),
+            ])));
+            if ($text !== '') {
+                return $text;
+            }
+        }
+
+        return (string) $solution->problem_text;
     }
 }

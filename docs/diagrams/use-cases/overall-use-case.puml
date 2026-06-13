@@ -1,0 +1,32 @@
+@startuml
+title المخطط العام لحالات الاستخدام في ALGOAG
+left to right direction
+skinparam packageStyle rectangle
+
+actor "مستخدم مصادق" as AuthUser
+actor "مدير" as Admin
+AuthUser <|-- Admin
+
+rectangle "ALGOAG" {
+    usecase "إدارة جلسة المساعد" as UC_Assistant
+    usecase "اقتراح خوارزميات" as UC_Suggest
+    usecase "محاكاة الأداء" as UC_Benchmark
+    usecase "حل مسألة Codeforces" as UC_SolveCF
+    usecase "استعراض بنك المسائل" as UC_Problems
+    usecase "استعراض المسارات التعليمية" as UC_Courses
+    usecase "استعراض مكتبة الأنماط" as UC_Patterns
+    usecase "استعراض التسليمات" as UC_Submissions
+    usecase "إدارة لوحة الإدارة" as UC_Admin
+}
+
+AuthUser --> UC_Assistant
+AuthUser --> UC_Suggest
+AuthUser --> UC_Benchmark
+AuthUser --> UC_SolveCF
+AuthUser --> UC_Problems
+AuthUser --> UC_Courses
+AuthUser --> UC_Patterns
+AuthUser --> UC_Submissions
+Admin --> UC_Admin
+
+@enduml

@@ -1,0 +1,33 @@
+@startuml
+title حالات استخدام المدير
+left to right direction
+skinparam packageStyle rectangle
+
+actor "مدير" as Admin
+
+rectangle "ALGOAG" {
+    package "لوحة التحكم والمحتوى" {
+        usecase "عرض لوحة التحكم" as UC_Dashboard
+        usecase "إنشاء مسألة" as UC_CreateProblem
+        usecase "تعديل مسألة" as UC_EditProblem
+        usecase "حذف مسألة" as UC_DeleteProblem
+    }
+
+    package "المستخدمون والإعدادات" {
+        usecase "إدارة المستخدمين" as UC_ManageUsers
+        usecase "رفع/خفض صلاحية المشرف" as UC_ToggleAdmin
+        usecase "عرض إعدادات النظام" as UC_Settings
+        usecase "تسجيل الخروج" as UC_Logout
+    }
+}
+
+Admin --> UC_Dashboard
+Admin --> UC_CreateProblem
+Admin --> UC_EditProblem
+Admin --> UC_DeleteProblem
+Admin --> UC_ManageUsers
+Admin --> UC_ToggleAdmin
+Admin --> UC_Settings
+Admin --> UC_Logout
+
+@enduml

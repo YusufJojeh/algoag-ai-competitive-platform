@@ -83,15 +83,16 @@ export default function AssistantWorkspace({
                         activeMode={mode}
                         isUsingPolling={isUsingPolling}
                         onOpenSidebar={openSidebar}
-                        onSelectMode={onModeChange}
                     />
                 )}
             >
                 <div className="flex h-full min-h-0 flex-col">
-                    <div className="border-b border-[var(--app-border)] bg-slate-950/55 px-6 py-5">
-                        <div className="mx-auto flex w-full max-w-4xl items-center justify-between gap-3">
-                            <QuickModesBar selectedMode={mode} onModeChange={onModeChange} disabled={isBusy} />
-                            <div className="hidden items-center gap-2 xl:flex">
+                    <div className="border-b border-[var(--app-border)] bg-slate-950/55 px-4 py-5 sm:px-6">
+                        <div className="mx-auto flex w-full max-w-4xl flex-col gap-4 2xl:flex-row 2xl:items-end 2xl:justify-between">
+                            <div className="min-w-0 flex-1">
+                                <QuickModesBar selectedMode={mode} onModeChange={onModeChange} disabled={isBusy} />
+                            </div>
+                            <div className="hidden shrink-0 items-stretch gap-2 lg:flex 2xl:items-center">
                                 <div className="rounded-[22px] border border-[var(--app-border)] bg-slate-950/45 px-4 py-3">
                                     <div className="flex items-center gap-2 text-xs font-medium text-[var(--app-muted)]">
                                         <MonitorCog className="h-4 w-4" />

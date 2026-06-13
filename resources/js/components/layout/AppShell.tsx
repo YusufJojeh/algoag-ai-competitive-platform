@@ -33,7 +33,7 @@ export default function AppShell({
 
     return (
         <div className="app-shell-bg min-h-screen p-4 text-[var(--app-foreground)] lg:p-5" data-testid="app-shell">
-            <div className={`grid min-h-[calc(100vh-2rem)] gap-4 ${hasContextPanel ? 'xl:grid-cols-[112px_minmax(0,1fr)_420px]' : 'xl:grid-cols-[112px_minmax(0,1fr)]'}`}>
+            <div className={`grid min-h-[calc(100vh-2rem)] gap-4 ${hasContextPanel ? 'xl:grid-cols-[140px_minmax(0,1fr)] 2xl:grid-cols-[140px_minmax(0,1fr)_420px]' : 'xl:grid-cols-[140px_minmax(0,1fr)]'}`}>
                 <aside className="hidden xl:block">
                     <AppSidebar currentPath={currentPath} user={user} onLogout={onLogout} />
                 </aside>
@@ -42,7 +42,7 @@ export default function AppShell({
                     <div className="xl:hidden">
                         <Sheet open={mobileSidebarOpen} onOpenChange={setMobileSidebarOpen}>
                             <SheetTrigger asChild>
-                                <Button type="button" variant="surface" className="rounded-2xl">
+                                <Button type="button" variant="surface" className="rounded-2xl" data-testid="mobile-navigation-trigger">
                                     <PanelLeftOpen className="h-4 w-4" />
                                     {locale === 'ar' ? 'التنقل' : 'Navigation'}
                                 </Button>
@@ -65,7 +65,7 @@ export default function AppShell({
                     </section>
                 </div>
 
-                {hasContextPanel ? <div className="min-h-0">{contextPanel}</div> : null}
+                {hasContextPanel ? <div className="min-h-0 xl:col-start-2 2xl:col-start-auto">{contextPanel}</div> : null}
             </div>
         </div>
     );

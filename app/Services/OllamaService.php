@@ -2,11 +2,16 @@
 
 namespace App\Services;
 
+use App\Services\AI\TextGenerator;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 
-class OllamaService
+class OllamaService implements TextGenerator
 {
+    private const SUGGEST_TIMEOUT = 30;
+    private const RECOMMEND_TIMEOUT = 30;
+    private const MAX_RESPONSE_BYTES = 60000;
+
     protected string $baseUrl;
 
     protected string $model;
@@ -27,7 +32,10 @@ class OllamaService
 
             return $response->successful();
         } catch (\Throwable $e) {
-            Log::warning('Ollama not available: '.$e->getMessage());
+            Log::warning('ollama.unavailable', [
+                'provider' => 'ollama',
+                'failure_category' => 'connection_failed',
+            ]);
 
             return false;
         }
@@ -50,7 +58,12 @@ class OllamaService
         $response = Http::timeout($timeout)->post($url, $body);
 
         if (! $response->successful()) {
-            throw new \RuntimeException('Ollama request failed: '.$response->body());
+            Log::warning('ollama.generate.failed', [
+                'provider' => 'ollama',
+                'status_code' => $response->status(),
+            ]);
+
+            throw new \RuntimeException('Ollama request failed.');
         }
 
         $data = $response->json();
@@ -78,20 +91,47 @@ PROMPT;
 
         $prompt = $systemPrompt."\n\nProblem:\n".$problemDescription;
 
-        $response = $this->generate($prompt);
+        $response = $this->generate($prompt, self::SUGGEST_TIMEOUT);
         $response = trim($response);
+        if (strlen($response) > self::MAX_RESPONSE_BYTES) {
+            return $this->fallbackSuggestion('Model response was too large to use safely.');
+        }
+
         // Strip possible markdown code block
         if (preg_match('/```(?:json)?\s*([\s\S]*?)```/', $response, $m)) {
             $response = trim($m[1]);
         }
         $decoded = json_decode($response, true);
         if (! is_array($decoded)) {
-            return [
-                ['name' => 'General approach', 'complexity_time' => 'Varies', 'complexity_space' => 'Varies', 'description' => $response ?: 'No suggestion parsed.', 'when_best' => '-', 'benchmark_key' => 'sorting'],
+            return $this->fallbackSuggestion(
+                $response === ''
+                    ? 'No suggestion parsed.'
+                    : 'Model response could not be parsed safely.'
+            );
+        }
+
+        $suggestions = [];
+        foreach (array_slice($decoded, 0, 20) as $item) {
+            if (! is_array($item) || trim((string) ($item['name'] ?? '')) === '') {
+                continue;
+            }
+
+            $benchmarkKey = (string) ($item['benchmark_key'] ?? 'sorting');
+            if (! in_array($benchmarkKey, BenchmarkKeys::KEYS, true)) {
+                $benchmarkKey = 'sorting';
+            }
+
+            $suggestions[] = [
+                'name' => mb_substr((string) $item['name'], 0, 255),
+                'complexity_time' => mb_substr((string) ($item['complexity_time'] ?? 'Varies'), 0, 100),
+                'complexity_space' => mb_substr((string) ($item['complexity_space'] ?? 'Varies'), 0, 100),
+                'description' => mb_substr((string) ($item['description'] ?? ''), 0, 1000),
+                'when_best' => mb_substr((string) ($item['when_best'] ?? '-'), 0, 500),
+                'benchmark_key' => $benchmarkKey,
             ];
         }
 
-        return $decoded;
+        return $suggestions ?: $this->fallbackSuggestion('No valid suggestion parsed.');
     }
 
     /**
@@ -100,8 +140,24 @@ PROMPT;
     public function recommend(array $suggestions, array $benchmarkResults): string
     {
         $context = "Suggested algorithms:\n".json_encode($suggestions, JSON_PRETTY_PRINT)."\n\nBenchmark results (time_ms, memory_mb):\n".json_encode($benchmarkResults, JSON_PRETTY_PRINT);
-        $prompt = 'Based on the above suggestions and benchmark results, write a short final recommendation (2-4 sentences) in the same language as the user (Arabic or English): which algorithm to choose and why. Be concise.';
+        $prompt = 'You are a friendly Arabic competitive-programming coach (مدرب). Based on the above suggestions and benchmark results, write a short final recommendation (2-4 sentences) in clear Arabic with a warm, encouraging coaching tone (keep technical terms like binary search in English inline): which algorithm to choose and why. If the user clearly used English, answer in English instead. Be concise.';
 
-        return $this->generate($context."\n\n".$prompt);
+        $response = $this->generate($context."\n\n".$prompt, self::RECOMMEND_TIMEOUT);
+
+        return mb_substr(trim($response), 0, 4000);
+    }
+
+    private function fallbackSuggestion(string $description): array
+    {
+        return [
+            [
+                'name' => 'General approach',
+                'complexity_time' => 'Varies',
+                'complexity_space' => 'Varies',
+                'description' => mb_substr($description, 0, 1000),
+                'when_best' => '-',
+                'benchmark_key' => 'sorting',
+            ],
+        ];
     }
 }

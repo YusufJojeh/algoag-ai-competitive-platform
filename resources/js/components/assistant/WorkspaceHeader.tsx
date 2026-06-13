@@ -1,4 +1,4 @@
-import { Menu, RefreshCw, Sparkles, WandSparkles } from 'lucide-react';
+import { Menu } from 'lucide-react';
 
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -11,7 +11,6 @@ type WorkspaceHeaderProps = {
     activeMode: AssistantMode;
     isUsingPolling: boolean;
     onOpenSidebar: () => void;
-    onSelectMode: (mode: AssistantMode) => void;
 };
 
 export default function WorkspaceHeader({
@@ -20,17 +19,25 @@ export default function WorkspaceHeader({
     activeMode,
     isUsingPolling,
     onOpenSidebar,
-    onSelectMode,
 }: WorkspaceHeaderProps) {
     const { locale } = useUiLocale();
     const statusMeta = getStatusMeta(status, locale);
     const modeMeta = getModeMeta(activeMode, locale);
+    const openNavigationLabel = locale === 'ar' ? 'فتح التنقل' : 'Open navigation';
 
     return (
         <div className="sticky top-0 z-20 border-b border-[var(--app-border)] bg-slate-950/85 px-6 py-5 backdrop-blur">
             <div className="mx-auto flex w-full max-w-4xl items-start justify-between gap-4">
                 <div className="flex items-start gap-3">
-                    <Button type="button" variant="surface" size="icon" className="xl:hidden" onClick={onOpenSidebar}>
+                    <Button
+                        type="button"
+                        variant="surface"
+                        size="icon"
+                        className="xl:hidden"
+                        onClick={onOpenSidebar}
+                        aria-label={openNavigationLabel}
+                        title={openNavigationLabel}
+                    >
                         <Menu className="h-4 w-4" />
                     </Button>
                     <div>
@@ -43,30 +50,18 @@ export default function WorkspaceHeader({
                         </div>
                         <p className="mt-2 max-w-2xl text-sm leading-6 text-[var(--app-muted)]">
                             {locale === 'ar'
-                                ? 'شارك شاشة المسألة أو المحرر، ثم قدّم فكرتك ليحللها المساعد كموجّه تعليمي متدرج.'
-                                : 'Share the problem or editor screen, then submit your idea so the assistant can review it as a guided tutor.'}
+                                ? 'شارك شاشة المسألة أو المحرر، ثم اختر نمطاً واحداً من القائمة وأرسل فكرتك ليراجعها المساعد كموجّه تدريبي.'
+                                : 'Share the problem or editor screen, choose one mode from the dropdown, then submit your idea for guided coaching.'}
                         </p>
                     </div>
                 </div>
 
-                <div className="flex flex-col items-end gap-2">
-                    <div className="flex flex-wrap items-center gap-2">
-                        <Button type="button" variant="soft" size="sm" onClick={() => onSelectMode('hint')}>
-                            <Sparkles className="h-4 w-4" />
-                            {locale === 'ar' ? 'أعطني تلميحاً' : 'Give me a hint'}
-                        </Button>
-                        <Button type="button" variant="surface" size="sm" onClick={() => onSelectMode('idea_check')}>
-                            <RefreshCw className="h-4 w-4" />
-                            {locale === 'ar' ? 'راجع الفكرة' : 'Review the idea'}
-                        </Button>
-                    </div>
-                    <p className="text-xs text-[var(--app-muted)]">
-                        {locale === 'ar' ? 'الوضع الحالي:' : 'Current mode:'}{' '}
-                        <span className="font-medium text-[var(--app-muted-strong)]">{modeMeta.label}</span>
-                        {isUsingPolling && (locale === 'ar' ? ' · يعمل عبر الاستطلاع الاحتياطي' : ' · running on polling fallback')}
-                        {!isUsingPolling && (locale === 'ar' ? ' · البث اللحظي متصل' : ' · realtime connected')}
-                    </p>
-                </div>
+                <p className="max-w-xs rounded-2xl border border-[var(--app-border)] bg-slate-950/45 px-4 py-3 text-right text-xs leading-5 text-[var(--app-muted)]">
+                    {locale === 'ar' ? 'الوضع الحالي:' : 'Current mode:'}{' '}
+                    <span className="font-medium text-[var(--app-muted-strong)]">{modeMeta.label}</span>
+                    {isUsingPolling && (locale === 'ar' ? ' · يعمل عبر الاستطلاع الاحتياطي' : ' · running on polling fallback')}
+                    {!isUsingPolling && (locale === 'ar' ? ' · البث اللحظي متصل' : ' · realtime connected')}
+                </p>
             </div>
         </div>
     );

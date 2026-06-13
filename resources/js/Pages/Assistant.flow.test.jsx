@@ -95,7 +95,7 @@ describe('Assistant completion flow', () => {
             expect(screen.getByText('فكرتك جيدة، لكن انتبه لحالة الحد الأخيرة.')).toBeInTheDocument();
         });
 
-        expect(screen.getByRole('button', { name: 'تشغيل' })).toBeInTheDocument();
+        expect(screen.getAllByRole('button', { name: 'تشغيل' }).length).toBeGreaterThanOrEqual(1);
         expect(mockSetTranscript).toHaveBeenCalledWith('');
         expect(mockSetAudioBlob).toHaveBeenCalledWith(null);
     });

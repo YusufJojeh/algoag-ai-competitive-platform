@@ -7,15 +7,17 @@ use App\Services\Assistant\Prompts\SystemPrompt;
 
 class PromptOrchestrator
 {
-    public function buildSystemPrompt(string $mode): string
+    public function buildSystemPrompt(string $mode, string $responseLanguage = 'ar'): string
     {
         $normalizedMode = ModePrompts::normalize($mode);
         $modeInstruction = ModePrompts::get($normalizedMode);
+        $languageInstruction = $this->languageInstruction($responseLanguage);
 
         return implode("\n\n", [
             SystemPrompt::BASE,
             "MODE: {$normalizedMode}",
             "MODE INSTRUCTION:\n{$modeInstruction}",
+            "RESPONSE LANGUAGE:\n{$languageInstruction}",
             SystemPrompt::ANTI_HALLUCINATION,
         ]);
     }
@@ -39,10 +41,21 @@ class PromptOrchestrator
             default => '',
         };
 
-        if ($prefix && $transcript) {
-            return "{$prefix}\n{$transcript}";
+        $wrappedTranscript = $transcript !== ''
+            ? "<user_content>\n{$transcript}\n</user_content>"
+            : '';
+
+        if ($prefix && $wrappedTranscript) {
+            return "{$prefix}\n{$wrappedTranscript}";
         }
 
-        return $transcript ?: $prefix;
+        return $wrappedTranscript ?: $prefix;
+    }
+
+    private function languageInstruction(string $responseLanguage): string
+    {
+        return $responseLanguage === 'en'
+            ? 'Reply in English because the current page UI language is English. Ignore the language of the pasted problem statement when choosing the response language. Keep code identifiers and technical terms unchanged.'
+            : 'أجب بالعربية الفصحى لأن لغة واجهة الصفحة الحالية هي العربية. تجاهل لغة نص المسألة الملصق عند اختيار لغة الرد، وأبق أسماء المتغيرات والمصطلحات التقنية والكود كما هي عند الحاجة.';
     }
 }

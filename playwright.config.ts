@@ -6,14 +6,16 @@ const skipWebServer = process.env.PLAYWRIGHT_SKIP_WEBSERVER === '1';
 
 export default defineConfig({
     testDir: './tests/e2e',
-    fullyParallel: true,
+    globalSetup: skipWebServer ? undefined : './tests/e2e/global-setup.ts',
+    globalTeardown: skipWebServer ? undefined : './tests/e2e/global-teardown.ts',
+    fullyParallel: false,
     forbidOnly: isCi,
     retries: isCi ? 2 : 0,
-    workers: isCi ? 2 : undefined,
-    timeout: 45_000,
+    workers: 1,
+    timeout: 60_000,
     reporter: isCi
         ? [['dot'], ['html', { open: 'never' }]]
-        : [['list'], ['html', { open: 'never' }]],
+        : [['list']],
     snapshotPathTemplate: '{testDir}/__snapshots__/{projectName}/{testFilePath}/{arg}{ext}',
     expect: {
         toHaveScreenshot: {
@@ -71,27 +73,4 @@ export default defineConfig({
             },
         },
     ],
-    webServer: skipWebServer
-        ? undefined
-        : [
-              {
-                  command: 'npm run dev -- --host 127.0.0.1 --port 5174',
-                  url: 'http://127.0.0.1:5174',
-                  reuseExistingServer: !isCi,
-                  timeout: 120_000,
-              },
-              {
-                  command: 'php artisan serve --host=127.0.0.1 --port=8000',
-                  url: 'http://127.0.0.1:8000',
-                  reuseExistingServer: !isCi,
-                  timeout: 120_000,
-                  env: {
-                      ...process.env,
-                      APP_URL: 'http://127.0.0.1:8000',
-                      BROADCAST_CONNECTION: 'log',
-                      CACHE_STORE: 'file',
-                      SESSION_DRIVER: 'file',
-                  },
-              },
-          ],
 });

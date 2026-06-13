@@ -9,3 +9,4 @@ Artisan::command('inspire', function () {
 })->purpose('Display an inspiring quote');
 
 Schedule::command('assistant:cleanup')->hourly();
+Schedule::command('ai:mark-stale-jobs')->everyFiveMinutes();

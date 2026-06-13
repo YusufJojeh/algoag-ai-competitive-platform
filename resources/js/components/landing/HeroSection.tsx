@@ -1,4 +1,4 @@
-import { lazy, Suspense, useEffect, useMemo, useState } from 'react';
+import { useMemo } from 'react';
 import { Link } from '@inertiajs/react';
 import { motion, useReducedMotion } from 'framer-motion';
 import { ArrowUpLeft, AudioLines, Eye, Sparkles, Waves } from 'lucide-react';
@@ -10,8 +10,6 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { useUiLocale } from '@/lib/ui-locale';
 
-const HeroScene3D = lazy(() => import('@/components/landing/HeroScene3D'));
-
 interface HeroSectionProps {
     isAuthenticated: boolean;
     disable3D?: boolean;
@@ -20,7 +18,6 @@ interface HeroSectionProps {
 export default function HeroSection({ isAuthenticated, disable3D = false }: HeroSectionProps) {
     const { locale } = useUiLocale();
     const reduceMotion = useReducedMotion();
-    const [canRender3D, setCanRender3D] = useState(false);
     const primaryHref = useMemo(() => (isAuthenticated ? '/assistant' : '/register'), [isAuthenticated]);
     const primaryLabel = isAuthenticated
         ? (locale === 'ar' ? 'افتح المساعد الآن' : 'Open the assistant now')
@@ -31,30 +28,15 @@ export default function HeroSection({ isAuthenticated, disable3D = false }: Hero
         : (locale === 'ar' ? 'تسجيل الدخول' : 'Log in');
     const stats = locale === 'ar'
         ? [
-              { label: 'مدرك للرؤية', value: 'شاشات، نصوص مسائل، وقيود' },
-              { label: 'صوتي أصلاً', value: 'تفكير، تردد، ونية' },
-              { label: 'لحظي', value: 'بث حالات التدريب وإشارات التوجيه' },
+              { label: 'يفهم المسألة', value: 'نصوص، قيود، عينات، وأكواد' },
+              { label: 'يدرب لا يلقّن', value: 'تلميحات، تعقيد، وحالات حدية' },
+              { label: 'جلسة حية', value: 'صوت، رؤية، وبث حالة التحليل' },
           ]
         : [
-              { label: 'Vision-aware', value: 'Screens, statements, constraints' },
-              { label: 'Voice-native', value: 'Reasoning, hesitation, intent' },
-              { label: 'Realtime', value: 'Streaming status and coaching cues' },
+              { label: 'Problem-aware', value: 'Statements, constraints, samples, code' },
+              { label: 'Coaches first', value: 'Hints, complexity, edge cases' },
+              { label: 'Live session', value: 'Voice, vision, and analysis status' },
           ];
-
-    useEffect(() => {
-        if (reduceMotion || disable3D) {
-            setCanRender3D(false);
-            return;
-        }
-
-        const canvas = document.createElement('canvas');
-        const supported =
-            typeof window !== 'undefined' &&
-            'WebGLRenderingContext' in window &&
-            Boolean(canvas.getContext('webgl') || canvas.getContext('experimental-webgl'));
-
-        setCanRender3D(supported);
-    }, [disable3D, reduceMotion]);
 
     return (
         <section className="relative overflow-hidden px-4 pb-16 pt-10 sm:px-6 lg:px-8 lg:pb-24 lg:pt-16" id="hero">
@@ -63,25 +45,25 @@ export default function HeroSection({ isAuthenticated, disable3D = false }: Hero
                     <MotionReveal className="max-w-3xl">
                         <Badge className="mb-6 w-fit gap-2 rounded-full px-4 py-1.5 text-[11px] tracking-[0.3em]" variant="violet">
                             <Sparkles className="size-3.5" />
-                            {locale === 'ar' ? 'مساعد حل المسائل بالصوت والرؤية' : 'AI Problem-Solving Voice + Vision Assistant'}
+                            {locale === 'ar' ? 'مدرب مسابقات برمجية بالصوت والرؤية' : 'Competitive Programming Voice + Vision Coach'}
                         </Badge>
                         <h1 className="max-w-4xl text-balance text-5xl font-semibold leading-[0.95] tracking-[-0.04em] text-white sm:text-6xl lg:text-7xl">
                             {locale === 'ar' ? (
                                 <>
-                                    مساعد يحلل <span className="landing-text-gradient">ما تراه</span> و
-                                    <span className="landing-text-gradient-cyan"> ما تقوله</span> قبل أن يوجّهك للحل.
+                                    مدرب يفهم <span className="landing-text-gradient">نص المسألة</span> و
+                                    <span className="landing-text-gradient-cyan"> طريقة تفكيرك</span> قبل أن يكشف الحل.
                                 </>
                             ) : (
                                 <>
-                                    An assistant that understands <span className="landing-text-gradient">what you see</span> and
-                                    <span className="landing-text-gradient-cyan"> what you say</span> before guiding you to the solution.
+                                    A coach that understands <span className="landing-text-gradient">the problem statement</span> and
+                                    <span className="landing-text-gradient-cyan"> your reasoning</span> before revealing the path.
                                 </>
                             )}
                         </h1>
                         <p className="mt-6 max-w-2xl text-lg leading-8 text-slate-300 sm:text-xl">
                             {locale === 'ar'
-                                ? 'ليس صندوق دردشة عام. هذه واجهة تدريب سينمائية للمبرمجين ترى نص المسألة على الشاشة، تسمع طريقة تفكيرك بصوتك، وترد بتحليل وتعليق حيّ خطوة بخطوة.'
-                                : 'This is not a generic chat box. It is a cinematic coaching surface for programmers that sees the problem on screen, hears your reasoning, and responds with live step-by-step analysis.'}
+                                ? 'ALGOAG يحوّل شاشة المسألة، صوتك، ومحاولتك الحالية إلى تدريب عملي: تلميح عند الحاجة، نقد للمنطق، كشف للحالات الحدية، وفحص للتعقيد قبل الحل الكامل.'
+                                : 'ALGOAG turns the problem screen, your voice, and your current attempt into practical coaching: hints when needed, logic critique, edge cases, and complexity checks before the full solution.'}
                         </p>
                     </MotionReveal>
 
@@ -95,7 +77,7 @@ export default function HeroSection({ isAuthenticated, disable3D = false }: Hero
                         <Button asChild variant="ghost" size="lg">
                             <a href="#how-it-works" className="group">
                                 {locale === 'ar' ? 'كيف يعمل' : 'How it works'}
-                                <ArrowUpLeft className="transition-transform group-hover:-translate-y-0.5 group-hover:-translate-x-0.5" />
+                                <ArrowUpLeft className="flip-rtl transition-transform group-hover:-translate-y-0.5 group-hover:-translate-x-0.5" />
                             </a>
                         </Button>
                     </MotionReveal>
@@ -112,67 +94,45 @@ export default function HeroSection({ isAuthenticated, disable3D = false }: Hero
                     <MotionReveal delay={0.26} className="mt-10 grid gap-4 md:grid-cols-3">
                         <div className="rounded-[28px] border border-cyan-300/18 bg-cyan-400/8 p-5">
                             <Eye className="size-5 text-cyan-200" />
-                            <p className="mt-4 text-sm font-medium text-white">{locale === 'ar' ? 'AI يرى السياق فعلاً' : 'AI truly sees the context'}</p>
+                            <p className="mt-4 text-sm font-medium text-white">{locale === 'ar' ? 'يفهم نص المسألة والسياق' : 'Understands the statement and context'}</p>
                             <p className="mt-2 text-sm leading-6 text-slate-300">
                                 {locale === 'ar'
-                                    ? 'واجهة مبنية على مشاركة الشاشة والتقاط الإطار، لا على سؤال نصي منزوع من تفاصيله.'
-                                    : 'The product is built on screen sharing and frame capture, not on stripped-down text prompts.'}
+                                    ? 'مشاركة الشاشة والتقاط الإطار يحفظان القيود، الأمثلة، والمحرر بدلاً من عزل السؤال عن تفاصيله.'
+                                    : 'Screen sharing and frame capture preserve constraints, examples, and editor state instead of stripping the question down.'}
                             </p>
                         </div>
                         <div className="rounded-[28px] border border-violet-300/18 bg-violet-400/8 p-5">
                             <AudioLines className="size-5 text-violet-100" />
-                            <p className="mt-4 text-sm font-medium text-white">{locale === 'ar' ? 'AI يسمع أسلوب التفكير' : 'AI hears how you reason'}</p>
+                            <p className="mt-4 text-sm font-medium text-white">{locale === 'ar' ? 'يسمع مسار التفكير' : 'Hears the reasoning path'}</p>
                             <p className="mt-2 text-sm leading-6 text-slate-300">
                                 {locale === 'ar'
-                                    ? 'يدعم الإدخال الصوتي والنصي حتى يفسر التردد، الفرضيات، ومسار المحاولة.'
-                                    : 'Voice and text input help it interpret hesitation, hypotheses, and the path of the attempt.'}
+                                    ? 'اكتب أو تحدث عن فكرتك، ثم اطلب تلميحاً، مقارنة مقاربات، أو مراجعة كود دون تبديل الأدوات.'
+                                    : 'Type or speak your idea, then ask for a hint, approach comparison, or code review without switching tools.'}
                             </p>
                         </div>
                         <div className="rounded-[28px] border border-white/10 bg-white/[0.04] p-5">
                             <Waves className="size-5 text-slate-100" />
-                            <p className="mt-4 text-sm font-medium text-white">{locale === 'ar' ? 'تحليل مباشر مع تغذية راجعة' : 'Live analysis with feedback'}</p>
+                            <p className="mt-4 text-sm font-medium text-white">{locale === 'ar' ? 'تدريب مباشر قابل للتتبع' : 'Trackable live coaching'}</p>
                             <p className="mt-2 text-sm leading-6 text-slate-300">
                                 {locale === 'ar'
-                                    ? 'يحوّل الالتقاط والصوت إلى مسار شرح حيّ مع حالة تحليل واضحة للمستخدم.'
-                                    : 'It turns capture and voice into a live explanation flow with clear analysis status.'}
+                                    ? 'حالات جاهز، تحليل، صوت، فشل، واكتمال تجعل دورة التدريب مفهومة حتى عند تأخر نموذج الذكاء الاصطناعي.'
+                                    : 'Ready, analyzing, audio, failed, and completed states keep the coaching loop understandable even when the AI model takes time.'}
                             </p>
                         </div>
                     </MotionReveal>
                 </div>
 
-                <MotionReveal delay={0.12} className="relative lg:min-h-[760px]">
+                <MotionReveal delay={0.12} className="relative lg:min-h-[760px]" data-static-hero={disable3D ? 'true' : 'false'}>
                     <div className="relative overflow-hidden rounded-[36px] border border-white/10 bg-slate-950/70 p-4 shadow-[0_30px_120px_rgba(2,6,23,0.75)] backdrop-blur-xl sm:p-5">
                         <div className="relative aspect-[0.98] overflow-hidden rounded-[30px] border border-white/10 bg-slate-950">
                             <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(103,232,249,0.18),transparent_28%),radial-gradient(circle_at_80%_20%,rgba(139,92,246,0.24),transparent_32%),linear-gradient(180deg,rgba(15,23,42,0.95),rgba(2,6,23,1))]" />
-                            {canRender3D ? (
-                                <Suspense
-                                    fallback={
-                                        <div className="absolute inset-0">
-                                            <MediaPlaceholderFrame
-                                                slot="Hero fallback"
-                                                title="3D fallback frame"
-                                                description="Static premium composition when reduced motion or WebGL fallback is active."
-                                                type="motion"
-                                                accent="cyan"
-                                                className="h-full rounded-none border-0 bg-transparent shadow-none"
-                                            />
-                                        </div>
-                                    }
-                                >
-                                    <HeroScene3D />
-                                </Suspense>
-                            ) : (
-                                <div className="absolute inset-0">
-                                    <MediaPlaceholderFrame
-                                        slot="Hero fallback"
-                                        title="3D fallback frame"
-                                        description="Static premium composition when reduced motion is preferred or WebGL is unavailable."
-                                        type="motion"
-                                        accent="cyan"
-                                        className="h-full rounded-none border-0 bg-transparent shadow-none"
-                                    />
-                                </div>
-                            )}
+                            <img
+                                src="/images/algoag-hero-ai-coach.svg"
+                                alt={locale === 'ar' ? 'لوحة بطل تجريدية لمساعد ALGOAG بالصوت والرؤية' : 'Abstract ALGOAG voice and vision AI coach hero artwork'}
+                                className="absolute inset-0 h-full w-full scale-[1.02] object-cover opacity-95"
+                                loading="eager"
+                                decoding="async"
+                            />
                             <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,transparent_34%,rgba(2,6,23,0.72)_100%)]" />
                             <FloatingPanels />
                             <motion.div

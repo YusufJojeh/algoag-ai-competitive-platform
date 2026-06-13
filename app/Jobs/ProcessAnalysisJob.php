@@ -3,6 +3,7 @@
 namespace App\Jobs;
 
 use App\Models\AssistantMessage;
+use App\Services\AI\AiUsageService;
 use App\Services\Assistant\AnalysisService;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -60,7 +61,7 @@ class ProcessAnalysisJob implements ShouldQueue
     {
         Log::error('assistant.job.failed', [
             'message_id' => $this->messageId,
-            'error' => $exception->getMessage(),
+            'failure_category' => 'job_failed',
         ]);
 
         $message = AssistantMessage::find($this->messageId);
@@ -69,6 +70,17 @@ class ProcessAnalysisJob implements ShouldQueue
                 'status' => AssistantMessage::STATUS_FAILED,
                 'error_message' => self::USER_VISIBLE_FAILURE,
             ]);
+
+            app(AiUsageService::class)->record(
+                $message->session?->user_id,
+                AiUsageService::FEATURE_ASSISTANT_ANALYSIS,
+                'failed',
+                $message->provider_name,
+                $message->provider_model,
+                null,
+                $message->token_usage,
+                'job_failed',
+            );
         }
     }
 }

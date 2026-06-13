@@ -1,0 +1,66 @@
+@startuml
+title حالات استخدام المستخدم المصادق
+left to right direction
+skinparam packageStyle rectangle
+
+actor "مستخدم مصادق" as AuthUser
+
+rectangle "ALGOAG" {
+    package "المساعد" {
+        usecase "فتح مساحة المساعد" as UC_AssistantOpen
+        usecase "إرسال طلب تحليل" as UC_AssistantAnalyze
+        usecase "عرض الجلسات السابقة" as UC_AssistantSessions
+        usecase "عرض جلسة" as UC_AssistantSession
+        usecase "إلغاء رسالة" as UC_AssistantCancel
+        usecase "تشغيل الرد الصوتي" as UC_AssistantAudio
+    }
+
+    package "الاقتراح والمحاكاة" {
+        usecase "اقتراح خوارزميات" as UC_Suggest
+        usecase "محاكاة الأداء" as UC_Benchmark
+    }
+
+    package "Codeforces" {
+        usecase "فتح صفحة الحل" as UC_SolveOpen
+        usecase "إرسال مسألة Codeforces" as UC_SolveSubmit
+        usecase "عرض نتيجة الحل" as UC_SolveResult
+        usecase "متابعة التقدم" as UC_SolveStatus
+        usecase "عرض سجل الحلول" as UC_SolveHistory
+    }
+
+    package "المحتوى" {
+        usecase "استعراض بنك المسائل" as UC_Problems
+        usecase "عرض تفاصيل المسألة" as UC_ProblemShow
+        usecase "استعراض المسارات التعليمية" as UC_Courses
+        usecase "عرض درس" as UC_CourseShow
+        usecase "استعراض مكتبة الأنماط" as UC_Patterns
+        usecase "عرض نمط" as UC_PatternShow
+        usecase "استعراض التسليمات" as UC_Submissions
+    }
+
+    usecase "تسجيل الخروج" as UC_Logout
+}
+
+AuthUser --> UC_AssistantOpen
+AuthUser --> UC_AssistantAnalyze
+AuthUser --> UC_AssistantSessions
+AuthUser --> UC_AssistantSession
+AuthUser --> UC_AssistantCancel
+AuthUser --> UC_AssistantAudio
+AuthUser --> UC_Suggest
+AuthUser --> UC_Benchmark
+AuthUser --> UC_SolveOpen
+AuthUser --> UC_SolveSubmit
+AuthUser --> UC_SolveResult
+AuthUser --> UC_SolveStatus
+AuthUser --> UC_SolveHistory
+AuthUser --> UC_Problems
+AuthUser --> UC_ProblemShow
+AuthUser --> UC_Courses
+AuthUser --> UC_CourseShow
+AuthUser --> UC_Patterns
+AuthUser --> UC_PatternShow
+AuthUser --> UC_Submissions
+AuthUser --> UC_Logout
+
+@enduml

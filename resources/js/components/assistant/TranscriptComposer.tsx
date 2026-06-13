@@ -88,7 +88,11 @@ export default function TranscriptComposer({
                 </div>
 
                 <div className="rounded-[28px] border border-[var(--app-border)] bg-slate-950/45 p-3 shadow-sm">
+                    <label htmlFor="assistant-transcript" className="sr-only">
+                        {locale === 'ar' ? 'نص الفكرة أو السؤال للمساعد' : 'Idea or question text for the assistant'}
+                    </label>
                     <Textarea
+                        id="assistant-transcript"
                         value={transcript}
                         onChange={(event) => onTranscriptChange(event.target.value)}
                         placeholder={

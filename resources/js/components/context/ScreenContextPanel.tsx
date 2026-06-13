@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { FileAudio2, FileStack, MicVocal, MonitorPlay, RadioTower, RefreshCcwDot } from 'lucide-react';
 
 import AudioReplyPlayer from '@/components/context/AudioReplyPlayer';
@@ -26,6 +26,8 @@ type ScreenContextPanelProps = {
     currentRequestMessageId: number | null;
     isUsingPolling: boolean;
     audioUrl?: string | null;
+    fullText?: string | null;
+    autoPlay?: boolean;
     error?: string | null;
     events: WorkspaceEvent[];
     onStartSharing: () => void;
@@ -48,6 +50,8 @@ export default function ScreenContextPanel({
     currentRequestMessageId,
     isUsingPolling,
     audioUrl,
+    fullText,
+    autoPlay = false,
     error,
     events,
     onStartSharing,
@@ -58,6 +62,14 @@ export default function ScreenContextPanel({
 }: ScreenContextPanelProps) {
     const { locale } = useUiLocale();
     const [activeTab, setActiveTab] = useState('capture');
+
+    useEffect(() => {
+        if (audioUrl) setActiveTab('audio');
+    }, [audioUrl]);
+
+    useEffect(() => {
+        if (fullText) setActiveTab('audio');
+    }, [fullText]);
 
     const statusMeta = getStatusMeta(status, locale);
     const modeMeta = getModeMeta(selectedMode, locale);
@@ -150,8 +162,8 @@ export default function ScreenContextPanel({
                     </TabsContent>
 
                     <TabsContent value="audio" className="space-y-4">
-                        <AudioReplyPlayer src={audioUrl} />
-                        {!audioUrl && <LoadingState compact lines={2} />}
+                        <AudioReplyPlayer src={audioUrl} text={fullText} autoPlay={autoPlay} />
+                        {!audioUrl && !fullText && <LoadingState compact lines={2} />}
                     </TabsContent>
                 </ScrollArea>
             </Tabs>

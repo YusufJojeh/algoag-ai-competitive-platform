@@ -10,9 +10,15 @@ use App\Http\Controllers\E2ERuntimeController;
 use App\Http\Controllers\E2EVisualController;
 use App\Http\Controllers\LandingController;
 use App\Http\Controllers\SubmissionController;
+use App\Modules\Admin\Http\Controllers\AdminDashboardController;
+use App\Modules\Admin\Http\Controllers\AdminSettingsController;
+use App\Modules\Admin\Http\Controllers\AdminUserController;
 use App\Modules\Admin\Http\Controllers\ProblemAdminController;
+use App\Modules\Arena\Http\Controllers\ArenaController;
+use App\Modules\Arena\Http\Controllers\ContestAdminController;
 use App\Modules\Patterns\Http\Controllers\PatternController;
 use App\Modules\Problems\Http\Controllers\ProblemController;
+use Illuminate\Foundation\Http\Middleware\ValidateCsrfToken;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -46,7 +52,7 @@ if (app()->environment(['local', 'testing'])) {
 
     Route::prefix('__e2e/runtime')->middleware('e2e.fixtures')->name('e2e.runtime.')->group(function () {
         Route::get('/auth/fixture', [E2ERuntimeController::class, 'authFixture'])->name('auth.fixture');
-        Route::post('/auth/login', [E2ERuntimeController::class, 'authLogin'])->name('auth.login');
+        Route::post('/auth/login', [E2ERuntimeController::class, 'authLogin'])->withoutMiddleware([ValidateCsrfToken::class])->name('auth.login');
     });
 }
 
@@ -67,10 +73,15 @@ Route::middleware($authGroupMiddleware)->group(function () use ($mutationActionM
         Route::post('/benchmark', [AlgorithmAssistantController::class, 'benchmark'])->name('benchmark');
         Route::post('/solve', [CodeforcesSolveController::class, 'solve'])->name('solve.run');
         Route::post('/submissions', [SubmissionController::class, 'store'])->name('submissions.store');
+        Route::post('/arena/{contest}/join', [ArenaController::class, 'join'])->name('arena.join');
     });
 
     Route::middleware(['admin', 'throttle:120,1'])->prefix('admin')->name('admin.')->group(function () {
+        Route::get('/', AdminDashboardController::class)->name('dashboard');
+        Route::get('/settings', AdminSettingsController::class)->name('settings');
+        Route::resource('users', AdminUserController::class)->only(['index', 'update']);
         Route::resource('problems', ProblemAdminController::class)->except(['show']);
+        Route::resource('contests', ContestAdminController::class)->except(['show']);
     });
 
     Route::middleware($assistantActionMiddleware)->prefix('assistant')->name('assistant.')->group(function () {
@@ -93,5 +104,9 @@ Route::middleware($authGroupMiddleware)->group(function () use ($mutationActionM
         Route::get('/courses', [CourseController::class, 'index'])->name('courses.index');
         Route::get('/courses/{course}', [CourseController::class, 'show'])->name('courses.show');
         Route::get('/submissions', [SubmissionController::class, 'index'])->name('submissions.index');
+        Route::get('/submissions/{submission}', [SubmissionController::class, 'show'])->name('submissions.show');
+        Route::get('/arena', [ArenaController::class, 'index'])->name('arena.index');
+        Route::get('/arena/{contest}', [ArenaController::class, 'show'])->name('arena.show');
+        Route::get('/arena/{contest}/standings', [ArenaController::class, 'standings'])->name('arena.standings');
     });
 });

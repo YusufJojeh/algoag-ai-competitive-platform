@@ -28,6 +28,7 @@ class ModePrompts
         'wrong' => 'logic_critique',
         'full' => 'full_solution',
         'summarize' => 'step_by_step_solution',
+        'next_step' => 'step_by_step_solution',
     ];
 
     public static function get(string $mode): string
@@ -50,6 +51,9 @@ class ModePrompts
     public static function allowedRequestModes(): array
     {
         return array_values(array_unique([
+            // 'auto' is resolved into a concrete mode by ModeResolver once the
+            // transcript is known (after STT for voice messages).
+            'auto',
             ...array_keys(self::MODES),
             ...array_keys(self::LEGACY_ALIASES),
         ]));

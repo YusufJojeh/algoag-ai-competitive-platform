@@ -58,7 +58,7 @@ export default function Login() {
                             <p className="mt-6 max-w-xl text-base leading-8 text-[var(--app-muted-strong)]">
                                 {locale === 'ar'
                                     ? 'مساحة عمل هادئة ومركزة لتحليل الشاشة، الاستماع للفكرة، بث الرد التعليمي، ومتابعة السياق الحي بدون ضجيج بصري.'
-                                    : 'A calm focused workspace for screen analysis, idea capture, streamed teaching replies, and live context without visual noise.'}
+                                    : 'A calm focused workspace for screen analysis, idea capture, teaching replies, and live context without visual noise.'}
                             </p>
                         </div>
 
@@ -70,7 +70,7 @@ export default function Login() {
                             />
                             <FeatureRow
                                 icon={Waves}
-                                title={locale === 'ar' ? 'محادثة تعليمية متدفقة' : 'Streaming teaching conversation'}
+                                title={locale === 'ar' ? 'محادثة تعليمية محدثة' : 'Teaching conversation'}
                                 description={locale === 'ar' ? 'الرد يظهر تدريجياً مع حالات واضحة للصوت، التحليل، وإعادة الاتصال عند الحاجة.' : 'Replies appear progressively with clear audio, analysis, and reconnect states.'}
                             />
                             <FeatureRow
@@ -164,7 +164,7 @@ export default function Login() {
                                     <p className="mt-2 text-sm leading-6 text-[var(--app-muted)]">
                                         {locale === 'ar'
                                             ? 'شاشة حية، محادثة متدفقة، ورد صوتي اختياري ضمن تجربة واحدة مترابطة.'
-                                            : 'Live preview, streaming conversation, and optional spoken reply within one connected experience.'}
+                                            : 'Live preview, teaching conversation, and optional spoken reply within one connected experience.'}
                                     </p>
                                 </div>
 

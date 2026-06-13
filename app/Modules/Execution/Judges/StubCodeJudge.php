@@ -15,7 +15,19 @@ class StubCodeJudge implements CodeJudge
 {
     public function judge(CodeforcesSolution $solution): VerificationRunResult
     {
-        $tests = $solution->generated_tests ?? [];
+        return $this->run(
+            (string) ($solution->solution_code ?? ''),
+            (string) ($solution->solution_language ?? 'python'),
+            $solution->generated_tests ?? [],
+        );
+    }
+
+    /**
+     * @param  array<int, array<string, mixed>>  $tests
+     * @param  array{time_limit_seconds?: int}  $limits
+     */
+    public function run(string $code, string $language, array $tests, array $limits = []): VerificationRunResult
+    {
         $cases = [];
         foreach ($tests as $i => $t) {
             $cases[] = [

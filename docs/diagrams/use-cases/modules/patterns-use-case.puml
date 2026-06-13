@@ -1,0 +1,18 @@
+@startuml
+title وحدة مكتبة الأنماط
+left to right direction
+skinparam packageStyle rectangle
+
+actor "مستخدم مصادق" as AuthUser
+
+rectangle "ALGOAG" {
+    usecase "استعراض مكتبة الأنماط" as UC_Index
+    usecase "البحث والفلترة" as UC_Filter
+    usecase "عرض نمط" as UC_Show
+}
+
+AuthUser --> UC_Index
+AuthUser --> UC_Filter
+AuthUser --> UC_Show
+
+@enduml

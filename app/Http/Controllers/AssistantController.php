@@ -6,6 +6,8 @@ use App\Http\Requests\AnalyzeRequest;
 use App\Jobs\ProcessAnalysisJob;
 use App\Models\AssistantMessage;
 use App\Models\AssistantSession;
+use App\Services\AI\AiUsageService;
+use App\Services\AI\QueueSafetyService;
 use App\Services\Assistant\Prompts\ModePrompts;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -18,13 +20,31 @@ use Inertia\Response;
 
 class AssistantController extends Controller
 {
-    public function index(): Response
+    public function __construct(
+        private readonly AiUsageService $usage,
+        private readonly QueueSafetyService $queueSafety,
+    ) {}
+
+    public function index(Request $request): Response
     {
-        return Inertia::render('Assistant');
+        return Inertia::render('Assistant', [
+            'initialPrompt' => $request->query('prompt'),
+        ]);
     }
 
     public function analyze(AnalyzeRequest $request): JsonResponse
     {
+        try {
+            $this->queueSafety->assertLongRunningQueueSafe();
+            $this->usage->assertWithinLimit($request->user(), AiUsageService::FEATURE_ASSISTANT_ANALYSIS);
+        } catch (\RuntimeException $e) {
+            return response()->json([
+                'message' => $e->getMessage() === 'AI usage limit reached.'
+                    ? 'AI usage limit reached. Try again later.'
+                    : 'AI processing is not configured for background execution.',
+            ], $e->getMessage() === 'AI usage limit reached.' ? 429 : 503);
+        }
+
         $clientRequestId = $request->validated('client_request_id');
         $scopedClientRequestId = $this->scopedClientRequestId($request, $clientRequestId);
 

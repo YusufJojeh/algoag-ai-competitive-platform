@@ -6,13 +6,15 @@ import { Button } from '@/components/ui/button';
 import { useUiLocale } from '@/lib/ui-locale';
 
 export default function ProblemsShow() {
-    const { problem } = usePage().props;
+    const { problem, contest } = usePage().props;
     const { locale, isRtl } = useUiLocale();
     const { data, setData, post, processing, errors } = useForm({
         problem_id: problem?.id,
+        contest_id: contest?.id ?? null,
         language: 'cpp',
         code: '',
     });
+    const assistantPrompt = encodeURIComponent(`${problem?.title ?? ''}\n\n${problem?.statement ?? ''}`.trim());
 
     return (
         <AppLayout
@@ -25,7 +27,7 @@ export default function ProblemsShow() {
             actions={(
                 <>
                     <Button asChild variant="soft" size="sm">
-                        <Link href="/assistant">{locale === 'ar' ? 'اسأل المساعد عن هذه المسألة' : 'Ask the assistant about this problem'}</Link>
+                        <Link href={`/assistant?prompt=${assistantPrompt}`}>{locale === 'ar' ? 'اسأل المساعد عن هذه المسألة' : 'Ask the assistant about this problem'}</Link>
                     </Button>
                     <Button asChild variant="surface" size="sm">
                         <Link href="/problems">{locale === 'ar' ? 'كل المسائل' : 'All problems'}</Link>
@@ -46,10 +48,16 @@ export default function ProblemsShow() {
 
                 <section className="rounded-[30px] border border-[var(--app-border)] bg-slate-950/45 p-6">
                     <h2 className="mb-3 text-lg font-semibold text-[var(--app-foreground)]">{locale === 'ar' ? 'إرسال حل' : 'Submit a solution'}</h2>
+                    {contest && (
+                        <div className="mb-4 flex flex-wrap items-center gap-2 rounded-2xl border border-cyan-400/20 bg-cyan-400/10 p-3 text-sm text-cyan-100">
+                            <span>{locale === 'ar' ? 'الإرسال ضمن المسابقة:' : 'Submitting in contest:'}</span>
+                            <Link href={`/arena/${contest.slug}`} className="font-medium underline">{contest.title}</Link>
+                        </div>
+                    )}
                     <p className="mb-4 text-sm text-[var(--app-muted)]">
                         {locale === 'ar'
-                            ? 'الإرسال الحالي للتسجيل والمراجعة التجريبية فقط. لا يوجد تنفيذ معزول فعلي بعد.'
-                            : 'Current submissions are stored for review and stub verification only. Real isolated execution is not wired yet.'}
+                            ? 'يُنفَّذ حلّك محلياً على حالات الاختبار الرسمية ثم تظهر النتيجة. (تشغيل محلي فقط — يلزم عزل آمن قبل الإنتاج.)'
+                            : 'Your solution is run locally against the official test cases and graded. (Local dev only — sandboxing required before production.)'}
                     </p>
                     <form
                         className="space-y-3"

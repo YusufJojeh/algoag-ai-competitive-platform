@@ -1,0 +1,20 @@
+@startuml
+title وحدة الإدارة
+left to right direction
+skinparam packageStyle rectangle
+
+actor "مدير" as Admin
+
+rectangle "ALGOAG" {
+    usecase "عرض لوحة التحكم" as UC_Dashboard
+    usecase "إدارة المسائل" as UC_Problems
+    usecase "إدارة المستخدمين" as UC_Users
+    usecase "عرض إعدادات النظام" as UC_Settings
+}
+
+Admin --> UC_Dashboard
+Admin --> UC_Problems
+Admin --> UC_Users
+Admin --> UC_Settings
+
+@enduml

@@ -2,7 +2,16 @@
   "permissions": {
     "allow": [
       "Bash(php artisan:*)",
-      "Bash(xargs grep *)"
+      "Bash(xargs grep *)",
+      "Bash(Get-ChildItem -Path . -Directory)",
+      "Bash(Select-Object Name)",
+      "Bash(Get-ChildItem -Path \"C:\\\\xampp\\\\htdocs\\\\algoag\\\\resources\\\\js\" -Recurse -Directory)",
+      "Bash(Select-Object -ExpandProperty FullName)",
+      "Bash(Sort-Object)",
+      "Bash(Get-ChildItem -Path \"database\\\\migrations\" -File)",
+      "PowerShell(head -30)",
+      "PowerShell(Get-ChildItem -Path \"C:\\\\xampp\\\\htdocs\\\\algoag\" -Directory | Where-Object { $_.Name -match \"content|resources|storage\" } | Select-Object Name)",
+      "Bash(grep -E \"\\\\.\\(php|sql\\)$\")"
     ]
   }
 }

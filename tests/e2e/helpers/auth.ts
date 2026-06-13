@@ -28,9 +28,11 @@ export async function provisionAuthFixture(request: APIRequestContext): Promise<
 
 export async function loginThroughUi(page: Page, request: APIRequestContext, locale: TestLocale) {
     await provisionAuthFixture(request);
-    // Inject the secret header into the page-level navigation by adding it
-    // via Playwright's extraHTTPHeaders before the page.goto call.
-    await page.setExtraHTTPHeaders(SECRET_HEADERS);
-    await page.goto(`/__e2e/runtime/auth/login?ui_locale=${locale}`, { waitUntil: 'networkidle' });
+    const loginResponse = await page.context().request.post(`/__e2e/runtime/auth/login?ui_locale=${locale}`, {
+        headers: SECRET_HEADERS,
+    });
+    expect(loginResponse.ok()).toBeTruthy();
+
+    await page.goto(`/assistant?ui_locale=${locale}`, { waitUntil: 'networkidle' });
     await expect(page).toHaveURL(/\/assistant/);
 }

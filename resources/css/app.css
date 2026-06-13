@@ -1,5 +1,10 @@
 @import 'tailwindcss';
 
+@theme {
+    --font-sans: 'IBM Plex Sans Arabic', system-ui, -apple-system, 'Segoe UI', sans-serif;
+    --font-mono: 'IBM Plex Mono', ui-monospace, 'SF Mono', 'Cascadia Code', monospace;
+}
+
 :root {
     color-scheme: dark;
     --app-background: #020617;
@@ -25,12 +30,37 @@ html {
 }
 
 body {
-    font-family: system-ui, -apple-system, sans-serif;
+    font-family: var(--font-sans);
     background:
         radial-gradient(circle at top left, rgba(103, 232, 249, 0.14), transparent 24%),
         radial-gradient(circle at top right, rgba(139, 92, 246, 0.24), transparent 28%),
         linear-gradient(180deg, #020617 0%, #020817 48%, #020617 100%);
     color: var(--app-foreground);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+}
+
+/*
+ * Arabic typography rules. Arabic is cursive: letter-spacing and uppercase
+ * break (disconnect/garble) the glyphs, and the script needs more leading than
+ * Latin. These rules make Arabic the first-class language across every page.
+ *
+ * `tracking-*` / `uppercase` Tailwind utilities are real classes and outrank a
+ * 0-specificity `:where()` reset, so Arabic-bearing elements must drop those
+ * utilities at the source — this layer only normalizes inherited defaults and
+ * neutralizes `text-transform`, which has no per-glyph utility escape hatch.
+ */
+:lang(ar) {
+    /* Arabic is cursive: any letter-spacing disconnects/garbles the glyphs.
+     * `lang` inherits, so this matches every element on an Arabic page and the
+     * `!important` overrides any `tracking-*` utility at the source — enforcing
+     * the rule globally instead of auditing every call site. Latin runs on an
+     * Arabic page (brand, code tokens) simply render at normal spacing, which
+     * is correct. line-height stays overridable so `leading-*` utilities and
+     * tight display headings keep their intended leading. */
+    letter-spacing: normal !important;
+    line-height: 1.8;
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -122,5 +152,12 @@ body {
     .landing-section-shell {
         position: relative;
         isolation: isolate;
+    }
+
+    /* Mirror directional glyphs (arrows/chevrons) under RTL so "forward" still
+     * points the reading direction. Apply to lucide arrow icons, not to icons
+     * whose meaning is absolute (play, search, check). */
+    [dir='rtl'] .flip-rtl {
+        transform: scaleX(-1);
     }
 }

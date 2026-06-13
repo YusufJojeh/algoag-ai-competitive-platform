@@ -49,6 +49,65 @@ class ProblemAdminControllerTest extends TestCase
         );
     }
 
+    public function test_admin_dashboard_returns_real_management_counts(): void
+    {
+        $admin = User::factory()->admin()->create();
+        User::factory()->create();
+        Problem::query()->create([
+            'title' => 'T',
+            'slug' => 'dashboard-problem',
+            'statement' => 'S',
+            'difficulty' => 'easy',
+            'time_limit_ms' => 1000,
+            'memory_limit_mb' => 256,
+        ]);
+
+        $response = $this->actingAs($admin)->get('/admin');
+
+        $response->assertStatus(200);
+        $response->assertInertia(fn ($page) => $page
+            ->component('Admin/Dashboard')
+            ->where('stats.users', 2)
+            ->where('stats.admins', 1)
+            ->where('stats.problems', 1)
+            ->has('recentUsers')
+            ->has('recentProblems')
+        );
+    }
+
+    public function test_admin_settings_returns_runtime_configuration(): void
+    {
+        $admin = User::factory()->admin()->create();
+
+        $response = $this->actingAs($admin)->get('/admin/settings');
+
+        $response->assertStatus(200);
+        $response->assertInertia(fn ($page) => $page
+            ->component('Admin/Settings')
+            ->has('settings.app.name')
+            ->has('settings.services')
+            ->has('settings.limits')
+        );
+    }
+
+    public function test_admin_can_manage_user_roles_but_not_remove_self(): void
+    {
+        $admin = User::factory()->admin()->create();
+        $user = User::factory()->create(['is_admin' => false]);
+
+        $this->actingAs($admin)
+            ->put('/admin/users/'.$user->id, ['is_admin' => true])
+            ->assertRedirect();
+
+        $this->assertTrue((bool) $user->fresh()->is_admin);
+
+        $this->actingAs($admin)
+            ->put('/admin/users/'.$admin->id, ['is_admin' => false])
+            ->assertSessionHasErrors('is_admin');
+
+        $this->assertTrue((bool) $admin->fresh()->is_admin);
+    }
+
     // PERF-04: response must include pagination metadata (LengthAwarePaginator).
     public function test_admin_problem_index_returns_paginated_response(): void
     {

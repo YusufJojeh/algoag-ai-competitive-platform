@@ -1,0 +1,56 @@
+@startuml
+title حالات استخدام الذكاء الاصطناعي
+left to right direction
+skinparam packageStyle rectangle
+
+actor "مستخدم مصادق" as AuthUser
+actor "مدير" as Admin
+AuthUser <|-- Admin
+
+rectangle "ALGOAG" {
+    package "قراءة وتوجيه" {
+        usecase "تحليل المساعد\n(نص / صورة / صوت)" as UC_Assistant
+        usecase "اقتراح موضوعات" as UC_Topics
+        usecase "اقتراح خوارزميات" as UC_Suggest
+        usecase "محاكاة الأداء" as UC_Benchmark
+    }
+
+    package "توليد الحلول" {
+        usecase "حل مسألة Codeforces" as UC_Solve
+        usecase "توليد الكود" as UC_Code
+        usecase "توليد الشرح" as UC_Explain
+        usecase "توليد الاختبارات" as UC_Tests
+    }
+
+    package "التحكم والحوكمة" {
+        usecase "التحقق من الحد اليومي" as UC_Limit
+        usecase "تسجيل استخدام AI" as UC_Audit
+    }
+}
+
+AuthUser --> UC_Assistant
+AuthUser --> UC_Topics
+AuthUser --> UC_Suggest
+AuthUser --> UC_Benchmark
+AuthUser --> UC_Solve
+
+UC_Assistant .> UC_Limit : <<include>>
+UC_Assistant .> UC_Audit : <<include>>
+
+UC_Topics .> UC_Audit : <<include>>
+UC_Suggest .> UC_Audit : <<include>>
+UC_Benchmark .> UC_Audit : <<include>>
+
+UC_Solve .> UC_Limit : <<include>>
+UC_Solve .> UC_Code : <<include>>
+UC_Solve .> UC_Explain : <<include>>
+UC_Solve .> UC_Tests : <<include>>
+UC_Solve .> UC_Audit : <<include>>
+
+note right of UC_Limit
+الحد اليومي ظاهر في الكود فقط لمساري:
+assistant/analyze و solve.
+بقية المسارات تسجل الاستخدام دون فحص حد يومي صريح.
+end note
+
+@enduml

@@ -12,7 +12,13 @@ class OpenAITTSTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        config(['assistant.openai.api_key' => 'test-key']);
+        config([
+            'assistant.openai.api_key' => 'test-key',
+            'assistant.openai.tts_model' => 'tts-1',
+            'assistant.openai.tts_timeout' => 30,
+            'assistant.openai.tts_voice_ar' => 'nova',
+            'assistant.openai.tts_voice_en' => 'alloy',
+        ]);
         Storage::fake('local');
     }
 
@@ -32,6 +38,31 @@ class OpenAITTSTest extends TestCase
         Http::assertSentCount(1);
     }
 
+    public function test_synthesize_sends_current_openai_speech_payload(): void
+    {
+        config([
+            'assistant.openai.tts_model' => 'tts-1-hd',
+            'assistant.openai.tts_voice_en' => 'shimmer',
+        ]);
+        Http::fake([
+            'api.openai.com/v1/audio/speech' => Http::response('fake mp3 binary data'),
+        ]);
+
+        (new OpenAITTS)->synthesize('  Your idea is correct  ', 'en');
+
+        Http::assertSent(function ($request) {
+            $body = json_decode($request->body(), true);
+
+            return $request->url() === 'https://api.openai.com/v1/audio/speech'
+                && $request->hasHeader('Authorization', 'Bearer test-key')
+                && $request->hasHeader('Accept', 'audio/mpeg')
+                && $body['model'] === 'tts-1-hd'
+                && $body['input'] === 'Your idea is correct'
+                && $body['voice'] === 'shimmer'
+                && $body['response_format'] === 'mp3';
+        });
+    }
+
     public function test_synthesize_throws_on_api_error(): void
     {
         Http::fake([
@@ -41,6 +72,14 @@ class OpenAITTSTest extends TestCase
         $tts = new OpenAITTS;
         $this->expectException(\RuntimeException::class);
         $tts->synthesize('test', 'ar');
+    }
+
+    public function test_synthesize_rejects_empty_text(): void
+    {
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessage('must not be empty');
+
+        (new OpenAITTS)->synthesize('   ', 'en');
     }
 
     public function test_synthesize_uses_different_voice_for_english(): void

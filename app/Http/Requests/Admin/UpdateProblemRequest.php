@@ -31,6 +31,10 @@ class UpdateProblemRequest extends FormRequest
             'difficulty' => ['required', Rule::in(['easy', 'medium', 'hard'])],
             'time_limit_ms' => ['required', 'integer', 'min:1', 'max:600000'],
             'memory_limit_mb' => ['required', 'integer', 'min:1', 'max:2048'],
+            'test_cases' => ['nullable', 'array', 'max:200'],
+            'test_cases.*.input' => ['nullable', 'string', 'max:100000'],
+            'test_cases.*.expected_output' => ['nullable', 'string', 'max:100000'],
+            'test_cases.*.is_sample' => ['boolean'],
         ];
     }
 }

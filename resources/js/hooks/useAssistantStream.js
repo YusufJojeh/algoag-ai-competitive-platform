@@ -1,6 +1,7 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
 
 const POLL_INTERVAL = 3000;
+const QUEUE_STALL_MS = 20000;
 const TERMINAL_STATUSES = ['completed', 'failed', 'cancelled'];
 
 export default function useAssistantStream(userId) {
@@ -8,6 +9,7 @@ export default function useAssistantStream(userId) {
     const [partialText, setPartialText] = useState('');
     const [fullText, setFullText] = useState('');
     const [audioUrl, setAudioUrl] = useState(null);
+    const [transcribedText, setTranscribedText] = useState('');
     const [error, setError] = useState(null);
     const [isUsingPolling, setIsUsingPolling] = useState(false);
 
@@ -15,6 +17,7 @@ export default function useAssistantStream(userId) {
     const pollTimerRef = useRef(null);
     const echoChannelRef = useRef(null);
     const chunksRef = useRef([]);
+    const queuedAtRef = useRef(null);
 
     const hasEcho = typeof window !== 'undefined' && window.Echo;
 
@@ -31,10 +34,12 @@ export default function useAssistantStream(userId) {
         setPartialText('');
         setFullText('');
         setAudioUrl(null);
+        setTranscribedText('');
         setError(null);
         setIsUsingPolling(false);
         chunksRef.current = [];
         messageIdRef.current = null;
+        queuedAtRef.current = null;
         if (pollTimerRef.current) {
             clearInterval(pollTimerRef.current);
             pollTimerRef.current = null;
@@ -71,6 +76,11 @@ export default function useAssistantStream(userId) {
         }
     }, []);
 
+    const handleTranscriptionCompleted = useCallback((data) => {
+        if (messageIdRef.current && data.message_id !== messageIdRef.current) return;
+        setTranscribedText(data.transcript ?? '');
+    }, []);
+
     const handleTTSReady = useCallback((data) => {
         if (messageIdRef.current && data.message_id !== messageIdRef.current) return;
         setAudioUrl(data.audio_url);
@@ -94,6 +104,9 @@ export default function useAssistantStream(userId) {
 
                 const data = await res.json();
                 setStatus(data.status);
+                if (data.status === 'queued' && queuedAtRef.current && Date.now() - queuedAtRef.current > QUEUE_STALL_MS) {
+                    setError('The request is still waiting for a queue worker. If this keeps happening, check that php artisan queue:work is running.');
+                }
 
                 if (data.partial_text) setPartialText(data.partial_text);
                 if (data.full_text) {
@@ -136,8 +149,10 @@ export default function useAssistantStream(userId) {
         setPartialText('');
         setFullText('');
         setAudioUrl(null);
+        setTranscribedText('');
         setError(null);
         setStatus('queued');
+        queuedAtRef.current = Date.now();
 
         if (hasEcho && userId) {
             try {
@@ -149,7 +164,8 @@ export default function useAssistantStream(userId) {
                     .listen('.analysis.chunk', handleChunk)
                     .listen('.analysis.completed', handleCompleted)
                     .listen('.analysis.failed', handleStatusUpdate)
-                    .listen('.tts.ready', handleTTSReady);
+                    .listen('.tts.ready', handleTTSReady)
+                    .listen('.transcription.completed', handleTranscriptionCompleted);
 
                 setIsUsingPolling(false);
                 return;
@@ -159,7 +175,7 @@ export default function useAssistantStream(userId) {
         }
 
         startPolling(messageId);
-    }, [hasEcho, userId, handleStatusUpdate, handleChunk, handleCompleted, handleTTSReady, startPolling]);
+    }, [hasEcho, userId, handleStatusUpdate, handleChunk, handleCompleted, handleTTSReady, handleTranscriptionCompleted, startPolling]);
 
     const unsubscribe = useCallback(() => {
         if (echoChannelRef.current && hasEcho) {
@@ -187,6 +203,7 @@ export default function useAssistantStream(userId) {
         partialText,
         fullText,
         audioUrl,
+        transcribedText,
         error,
         isUsingPolling,
         subscribe,

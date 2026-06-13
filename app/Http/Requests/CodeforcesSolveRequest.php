@@ -16,6 +16,7 @@ class CodeforcesSolveRequest extends FormRequest
         return [
             'problem' => ['required', 'string', 'min:10', 'max:50000'],
             'language' => ['nullable', 'string', 'in:cpp,python'],
+            'response_language' => ['nullable', 'string', 'in:ar,en'],
         ];
     }
 }

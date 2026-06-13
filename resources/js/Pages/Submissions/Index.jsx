@@ -4,6 +4,7 @@ import AppLayout from '@/components/layout/AppLayout';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { useUiLocale } from '@/lib/ui-locale';
+import { verdictLabel, verdictTone } from '@/lib/verdicts';
 
 export default function SubmissionsIndex() {
     const { submissions = [], flash } = usePage().props;
@@ -15,8 +16,8 @@ export default function SubmissionsIndex() {
             badge={locale === 'ar' ? 'سجل التدريب' : 'Practice log'}
             title={locale === 'ar' ? 'إرسالاتك ومراجعاتك الأخيرة' : 'Your latest submissions and reviews'}
             description={locale === 'ar'
-                ? 'هذا السجل يبقى واضحاً حول الوضع الحالي: التخزين والمراجعة موجودان، لكن الحكم الحقيقي ما يزال تجريبياً.'
-                : 'This log stays honest about the current state: storage and review exist, but real judging is still stubbed.'}
+                ? 'كل إرسال يُحكَم محلياً على حالات الاختبار الرسمية. اضغط على إرسال لعرض نتائج الحالات.'
+                : 'Each submission is judged locally against the official test cases. Open one to see per-case results.'}
             actions={(
                 <Button asChild variant="soft" size="sm">
                     <Link href="/problems">{locale === 'ar' ? 'اذهب إلى المسائل' : 'Go to problems'}</Link>
@@ -39,7 +40,12 @@ export default function SubmissionsIndex() {
                     <ul className="space-y-3">
                         {submissions.map((s) => (
                             <li key={s.id} className="rounded-[28px] border border-[var(--app-border)] bg-slate-950/45 p-5 text-sm">
-                                <span className="text-xs text-slate-500">{s.created_at}</span>
+                                <div className="flex items-center justify-between gap-3">
+                                    <span className="text-xs text-slate-500">{s.created_at}</span>
+                                    <Link href={`/submissions/${s.id}`} className="text-xs text-cyan-200 hover:underline">
+                                        #{s.id}
+                                    </Link>
+                                </div>
                                 <p className="mt-2 text-slate-200">
                                     {s.problem ? (
                                         <Link href={`/problems/${s.problem.id}`} className="text-cyan-200 hover:underline">
@@ -49,9 +55,11 @@ export default function SubmissionsIndex() {
                                         locale === 'ar' ? 'بدون مسألة مرتبطة' : 'No linked problem'
                                     )}
                                 </p>
-                                <Badge variant="subtle" className="mt-3">
-                                    {s.language} — {s.verdict}
-                                </Badge>
+                                <div className="mt-3 flex flex-wrap items-center gap-2">
+                                    <Badge variant={verdictTone(s.verdict)}>{verdictLabel(s.verdict, locale)}</Badge>
+                                    <Badge variant="subtle">{s.language}</Badge>
+                                    {s.runtime_ms != null && <Badge variant="subtle">{s.runtime_ms} ms</Badge>}
+                                </div>
                             </li>
                         ))}
                     </ul>

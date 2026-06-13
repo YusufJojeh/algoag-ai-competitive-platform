@@ -20,7 +20,7 @@ export default function ContextPanelHeader({
     const { locale } = useUiLocale();
 
     return (
-        <div className="sticky top-0 z-10 space-y-4 border-b border-[var(--app-border)] bg-[rgba(255,255,255,0.95)] px-5 py-4 backdrop-blur">
+        <div className="sticky top-0 z-10 space-y-4 border-b border-[var(--app-border)] bg-slate-950/90 px-5 py-4 backdrop-blur">
             <div className="flex items-start justify-between gap-3">
                 <div>
                     <p className="text-sm font-semibold text-[var(--app-foreground)]">{locale === 'ar' ? 'لوحة السياق الحي' : 'Live context panel'}</p>
@@ -29,22 +29,50 @@ export default function ContextPanelHeader({
                     </p>
                 </div>
                 <div className="flex items-center gap-2">
-                    <Button type="button" variant="surface" size="icon" onClick={onRestart}>
+                    <Button
+                        type="button"
+                        variant="surface"
+                        size="icon"
+                        onClick={onRestart}
+                        aria-label={locale === 'ar' ? 'بدء جلسة جديدة' : 'Start a new session'}
+                        title={locale === 'ar' ? 'بدء جلسة جديدة' : 'Start a new session'}
+                    >
                         <RotateCw className="h-4 w-4" />
                     </Button>
-                    <Button type="button" variant="surface" size="icon" onClick={onRefresh}>
+                    <Button
+                        type="button"
+                        variant="surface"
+                        size="icon"
+                        onClick={onRefresh}
+                        aria-label={locale === 'ar' ? 'تحديث الإطار الحالي' : 'Refresh current frame'}
+                        title={locale === 'ar' ? 'تحديث الإطار الحالي' : 'Refresh current frame'}
+                    >
                         <RefreshCcw className="h-4 w-4" />
                     </Button>
-                    <Button type="button" variant="surface" size="icon" onClick={onReconnect}>
+                    <Button
+                        type="button"
+                        variant="surface"
+                        size="icon"
+                        onClick={onReconnect}
+                        aria-label={locale === 'ar' ? 'إعادة الاتصال بالتحديثات' : 'Reconnect live updates'}
+                        title={locale === 'ar' ? 'إعادة الاتصال بالتحديثات' : 'Reconnect live updates'}
+                    >
                         <PlugZap className="h-4 w-4" />
                     </Button>
-                    <Button type="button" variant="surface" size="icon" onClick={onExpand}>
+                    <Button
+                        type="button"
+                        variant="surface"
+                        size="icon"
+                        onClick={onExpand}
+                        aria-label={locale === 'ar' ? 'توسيع المعاينة' : 'Expand preview'}
+                        title={locale === 'ar' ? 'توسيع المعاينة' : 'Expand preview'}
+                    >
                         <Expand className="h-4 w-4" />
                     </Button>
                 </div>
             </div>
 
-            <TabsList className="grid h-auto w-full grid-cols-5 rounded-[22px] bg-[rgba(248,246,255,0.96)]">
+            <TabsList className="grid h-auto w-full grid-cols-5 rounded-[22px] bg-slate-950/55">
                 <TabsTrigger value="capture" className="rounded-[16px]">
                     {locale === 'ar' ? 'الالتقاط الحي' : 'Live capture'}
                 </TabsTrigger>

@@ -81,7 +81,7 @@ export default function LiveCapturePreview({
     }
 
     return (
-        <div className="overflow-hidden rounded-[28px] border border-[var(--app-border)] bg-white/88 shadow-sm">
+        <div className="overflow-hidden rounded-[28px] border border-[var(--app-border)] bg-slate-950/55 shadow-sm">
             <div className="relative aspect-[16/10] bg-[linear-gradient(180deg,#fdfbff_0%,#f4f0ff_100%)]">
                 {isSharing && stream ? (
                     <video ref={videoRef} autoPlay playsInline muted className="h-full w-full object-contain" />
@@ -95,7 +95,7 @@ export default function LiveCapturePreview({
                 </div>
             </div>
 
-            {error && <div className="border-t border-rose-100 bg-rose-50 px-4 py-3 text-sm text-rose-700">{error}</div>}
+            {error && <div className="border-t border-rose-400/20 bg-rose-400/10 px-4 py-3 text-sm text-rose-200">{error}</div>}
         </div>
     );
 }

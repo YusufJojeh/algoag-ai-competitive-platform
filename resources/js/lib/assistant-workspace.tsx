@@ -13,11 +13,13 @@ import {
     SearchCheck,
     Sparkles,
     TriangleAlert,
+    Trophy,
 } from 'lucide-react';
 
 import type { UiLocale } from '@/lib/ui-locale';
 
 export type AssistantMode =
+    | 'auto'
     | 'topic_explanation'
     | 'topic_recommendation'
     | 'hint'
@@ -37,7 +39,8 @@ export type AssistantMode =
     | 'check'
     | 'wrong'
     | 'full'
-    | 'summarize';
+    | 'summarize'
+    | 'next_step';
 export type StreamStatus = 'idle' | 'queued' | 'transcribing' | 'analyzing' | 'tts_generating' | 'completed' | 'failed' | 'cancelled';
 
 export type ThreadMessage = {
@@ -59,6 +62,7 @@ export type WorkspaceEvent = {
 };
 
 const modeBase = {
+    auto: { icon: Sparkles, ar: { label: 'تلقائي حسب كلامي', shortLabel: 'تلقائي', description: 'يفهم من سياق كلامك إن كنت تطلب تحققاً، تصحيح WA، تحليل TLE، تلميحاً أو غيره.' }, en: { label: 'Auto (from my words)', shortLabel: 'Auto', description: 'Detects from your words whether you want an idea check, WA debug, TLE analysis, a hint, or more.' } },
     topic_explanation: { icon: BrainCircuit, ar: { label: 'اشرح الموضوع', shortLabel: 'الموضوع', description: 'اشرح النمط أو الفكرة الأساسية للمسألة تعليمياً.' }, en: { label: 'Explain the topic', shortLabel: 'Topic', description: 'Explain the underlying topic or pattern in a teaching-first way.' } },
     topic_recommendation: { icon: Sparkles, ar: { label: 'رشّح الموضوعات', shortLabel: 'ترشيح', description: 'استخرج الموضوعات أو الوسوم الأكثر احتمالاً من نص المسألة.' }, en: { label: 'Recommend topics', shortLabel: 'Recommend', description: 'Infer the most likely topics or tags from the visible problem.' } },
     hint: { icon: Lightbulb, ar: { label: 'أعطني تلميحاً', shortLabel: 'تلميح', description: 'توجيه خفيف بدون كشف المسار الكامل.' }, en: { label: 'Give me a hint', shortLabel: 'Hint', description: 'Light guidance without revealing the full path.' } },
@@ -84,8 +88,15 @@ const modeAliases: Record<string, keyof typeof modeBase> = {
     wrong: 'logic_critique',
     full: 'full_solution',
     summarize: 'step_by_step_solution',
+    next_step: 'step_by_step_solution',
     // Ensure legacy/alias modes resolve correctly
 };
+
+const modeAliasBase = {
+    wrong: { icon: CircleX, ar: { label: 'الإجابة الخاطئة', shortLabel: 'إجابة خاطئة', description: 'حلل سبب نتيجة Wrong Answer واربطها بمدخل مضاد واضح.' }, en: { label: 'Wrong answer', shortLabel: 'Wrong answer', description: 'Analyze why the current attempt gets a Wrong Answer and tie it to a concrete counterexample.' } },
+    summarize: { icon: MessageSquareQuote, ar: { label: 'لخّص الخطوة التالية', shortLabel: 'تلخيص', description: 'حوّل الرد إلى ملخص قصير يركز على الخطوة التالية فقط.' }, en: { label: 'Summarize', shortLabel: 'Summarize', description: 'Condense the reply into the next useful step only.' } },
+    next_step: { icon: AlarmClockCheck, ar: { label: 'الخطوة التالية', shortLabel: 'التالي', description: 'اعط خطوة واحدة قابلة للتنفيذ بدون كشف الحل الكامل.' }, en: { label: 'Next step', shortLabel: 'Next step', description: 'Give one actionable next step without revealing the full solution.' } },
+} as const;
 
 const statusBase = {
     idle: { tone: 'neutral', icon: Sparkles, ar: { label: 'جاهز', description: 'المساحة جاهزة لاستقبال السياق الحالي.' }, en: { label: 'Ready', description: 'The workspace is ready for the next context.' } },
@@ -107,9 +118,63 @@ export function getAssistantModes(locale: UiLocale = 'ar') {
 }
 
 export function getModeMeta(mode: AssistantMode, locale: UiLocale = 'ar') {
+    if (mode in modeAliasBase) {
+        const aliasMode = mode as keyof typeof modeAliasBase;
+
+        return {
+            id: aliasMode,
+            icon: modeAliasBase[aliasMode].icon,
+            ...modeAliasBase[aliasMode][locale],
+        };
+    }
+
     const normalizedMode = (modeAliases[mode] ?? mode) as keyof typeof modeBase;
 
-    return getAssistantModes(locale).find((item) => item.id === normalizedMode) ?? getAssistantModes(locale)[2];
+    const allModes = getAssistantModes(locale);
+
+    return allModes.find((item) => item.id === normalizedMode)
+        ?? allModes.find((item) => item.id === 'idea_check')!;
+}
+
+export function getAssistantModeSelectGroups(locale: UiLocale = 'ar') {
+    const groupLabels = locale === 'ar'
+        ? {
+              primary: 'الأنماط الأساسية',
+              learning: 'تعلم وتحليل',
+              production: 'حل وبرمجة',
+              focused: 'طلبات مركزة',
+          }
+        : {
+              primary: 'Primary modes',
+              learning: 'Learning and analysis',
+              production: 'Solve and code',
+              focused: 'Focused requests',
+          };
+
+    const build = (modes: AssistantMode[]) => modes.map((mode) => getModeMeta(mode, locale));
+
+    return [
+        {
+            id: 'primary',
+            label: groupLabels.primary,
+            modes: build(['auto', 'hint', 'idea_check', 'debug_wrong_answer', 'complexity', 'edge_cases']),
+        },
+        {
+            id: 'learning',
+            label: groupLabels.learning,
+            modes: build(['topic_explanation', 'topic_recommendation', 'logic_critique', 'full_solution', 'step_by_step_solution', 'approach_compare', 'common_mistakes']),
+        },
+        {
+            id: 'production',
+            label: groupLabels.production,
+            modes: build(['solve', 'generate_code', 'generate_tests', 'verify_code']),
+        },
+        {
+            id: 'focused',
+            label: groupLabels.focused,
+            modes: build(['wrong', 'summarize', 'next_step']),
+        },
+    ];
 }
 
 export function getStatusMeta(status: StreamStatus, locale: UiLocale = 'ar') {
@@ -125,17 +190,12 @@ export function getStatusMeta(status: StreamStatus, locale: UiLocale = 'ar') {
 export function getSidebarPrimaryItems(locale: UiLocale = 'ar') {
     return [
         { id: 'assistant', label: locale === 'ar' ? 'المساعد' : 'Assistant', href: '/assistant', icon: BrainCircuit, available: true },
+        { id: 'solve', label: 'Codeforces', href: '/solve', icon: PlayCircle, available: true },
         { id: 'patterns', label: locale === 'ar' ? 'الموضوعات' : 'Topics', href: '/patterns', icon: Lightbulb, available: true },
         { id: 'problems', label: locale === 'ar' ? 'المسائل' : 'Problems', href: '/problems', icon: Activity, available: true },
+        { id: 'arena', label: locale === 'ar' ? 'الساحة' : 'Arena', href: '/arena', icon: Trophy, available: true },
         { id: 'courses', label: locale === 'ar' ? 'المسارات' : 'Courses', href: '/courses', icon: CircleHelp, available: true },
         { id: 'submissions', label: locale === 'ar' ? 'الإرسالات' : 'Submissions', href: '/submissions', icon: MessageSquareQuote, available: true },
-    ];
-}
-
-export function getSidebarUtilityItems(locale: UiLocale = 'ar') {
-    return [
-        { id: 'solve', label: 'Codeforces', href: '/solve' },
-        { id: 'landing', label: locale === 'ar' ? 'الواجهة الرئيسية' : 'Landing', href: '/' },
     ];
 }
 

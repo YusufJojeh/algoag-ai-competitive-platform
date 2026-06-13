@@ -62,6 +62,43 @@ class AlgorithmAssistantControllerTest extends TestCase
         );
     }
 
+    public function test_suggest_uses_openai_primary_when_configured(): void
+    {
+        config([
+            'services.ai.primary' => 'openai',
+            'services.ai.openai.api_key' => 'test-key',
+            'services.ai.openai.model' => 'gpt-4o',
+        ]);
+
+        Http::fake([
+            'api.openai.com/v1/chat/completions' => Http::response([
+                'choices' => [[
+                    'message' => [
+                        'content' => '[{"name":"Two Pointers","complexity_time":"O(n)","complexity_space":"O(1)","description":"Fits.","when_best":"Linear scan.","benchmark_key":"two_pointers"}]',
+                    ],
+                ]],
+            ], 200),
+        ]);
+
+        $response = $this->post('/suggest', [
+            'problem' => 'Find a pair in a sorted array with a target sum.',
+        ]);
+
+        $response->assertStatus(200);
+        $response->assertInertia(fn ($page) => $page
+            ->component('Suggestions')
+            ->where('suggestions.0.name', 'Two Pointers')
+            ->where('ollamaAvailable', true)
+        );
+        $this->assertDatabaseHas('ai_usage_records', [
+            'user_id' => $this->user->id,
+            'feature' => 'algorithm_suggest',
+            'provider' => 'openai',
+            'model' => 'gpt-4o',
+            'status' => 'completed',
+        ]);
+    }
+
     public function test_suggest_returns_error_when_ollama_fails(): void
     {
         Http::fake([
@@ -199,7 +236,7 @@ class AlgorithmAssistantControllerTest extends TestCase
 
         $response->assertStatus(200);
         $response->assertInertia(fn ($page) => $page
-            ->where('recommendation', 'لم نتمكن من توليد توصية تلقائية. راجع مقارنة الأداء أعلاه.')
+            ->where('recommendation', 'We could not generate an automatic recommendation. Review the benchmark results above.')
         );
     }
 

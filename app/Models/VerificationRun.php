@@ -21,6 +21,8 @@ class VerificationRun extends Model
     public const VERDICT_TIME_LIMIT_EXCEEDED = 'time_limit_exceeded';
     public const VERDICT_INTERNAL_ERROR = 'internal_error';
     public const VERDICT_NOT_RUN = 'not_run';
+    public const VERDICT_UNSUPPORTED_LANGUAGE = 'unsupported_language';
+    public const VERDICT_NO_TESTS = 'no_tests';
 
     protected $fillable = [
         'codeforces_solution_id',

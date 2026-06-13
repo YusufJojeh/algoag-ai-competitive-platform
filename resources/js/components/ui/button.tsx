@@ -10,7 +10,7 @@ const buttonVariants = cva(
         variants: {
             variant: {
                 default:
-                    'bg-gradient-to-r from-violet-500 via-violet-400 to-cyan-400 text-slate-950 shadow-[0_0_30px_rgba(56,189,248,0.18)] hover:scale-[1.02]',
+                    'bg-[var(--app-accent)] text-white shadow-[0_0_30px_rgba(139,92,246,0.18)] hover:bg-[var(--app-accent-strong)] hover:scale-[1.02]',
                 secondary:
                     'border border-white/12 bg-white/6 text-slate-100 hover:border-cyan-300/40 hover:bg-white/10',
                 ghost:
@@ -18,7 +18,7 @@ const buttonVariants = cva(
                 outline:
                     'border border-white/14 bg-slate-950/40 text-slate-100 hover:border-violet-300/40 hover:bg-slate-900/70',
                 lavender:
-                    'border border-cyan-300/20 bg-gradient-to-r from-violet-500 via-violet-400 to-cyan-400 text-slate-950 shadow-[0_0_30px_rgba(56,189,248,0.18)] hover:scale-[1.02] focus-visible:ring-cyan-400/70',
+                    'border border-violet-300/20 bg-[var(--app-accent)] text-white shadow-[0_0_30px_rgba(139,92,246,0.18)] hover:bg-[var(--app-accent-strong)] hover:scale-[1.02] focus-visible:ring-cyan-400/70',
                 soft:
                     'border border-white/12 bg-white/6 text-slate-100 hover:border-cyan-300/40 hover:bg-white/10 focus-visible:ring-cyan-400/40',
                 surface:

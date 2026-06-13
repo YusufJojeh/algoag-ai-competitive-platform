@@ -11,11 +11,23 @@ export const assistantVisualStates = [
 ] as const;
 
 export const assistantModes = [
+    { id: 'topic_explanation', label: 'topic' },
+    { id: 'topic_recommendation', label: 'recommend' },
     { id: 'hint', label: 'hint' },
-    { id: 'check', label: 'check' },
-    { id: 'wrong', label: 'wrong' },
-    { id: 'full', label: 'full' },
-    { id: 'summarize', label: 'summarize' },
+    { id: 'idea_check', label: 'check' },
+    { id: 'logic_critique', label: 'critique' },
     { id: 'edge_cases', label: 'edge-cases' },
     { id: 'complexity', label: 'complexity' },
+    { id: 'full_solution', label: 'full-solution' },
+    { id: 'step_by_step_solution', label: 'step-by-step' },
+    { id: 'approach_compare', label: 'compare' },
+    { id: 'common_mistakes', label: 'mistakes' },
+    { id: 'solve', label: 'solve' },
+    { id: 'generate_code', label: 'code' },
+    { id: 'generate_tests', label: 'tests' },
+    { id: 'verify_code', label: 'verify' },
+    { id: 'debug_wrong_answer', label: 'debug-wrong-answer' },
+    { id: 'wrong', label: 'wrong-answer' },
+    { id: 'summarize', label: 'summarize' },
+    { id: 'next_step', label: 'next-step' },
 ] as const;

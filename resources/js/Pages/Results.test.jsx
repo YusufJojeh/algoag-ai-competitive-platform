@@ -6,6 +6,7 @@ const mockUsePage = vi.fn();
 
 vi.mock('@inertiajs/react', () => ({
     usePage: () => mockUsePage(),
+    useForm: () => ({ post: vi.fn(), processing: false }),
     Link: ({ href, children, ...rest }) => <a href={href} {...rest}>{children}</a>,
 }));
 
@@ -60,7 +61,7 @@ describe('Results', () => {
 
     it('renders link to new problem', () => {
         render(<Results />);
-        const link = screen.getByRole('link', { name: /مسألة جديدة/ });
+        const link = screen.getAllByRole('link', { name: /مسألة جديدة/ })[0];
         expect(link).toHaveAttribute('href', '/assistant');
     });
 

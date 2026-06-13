@@ -36,14 +36,19 @@ class ProblemAdminController extends Controller
     public function store(StoreProblemRequest $request): RedirectResponse
     {
         $this->authorize('create', Problem::class);
-        Problem::query()->create($request->validated());
 
-        return redirect()->route('admin.problems.index')->with('message', 'تم إنشاء المسألة.');
+        $validated = $request->validated();
+        $problem = Problem::query()->create($this->problemAttributes($validated));
+        $this->syncTestCases($problem, $validated['test_cases'] ?? []);
+
+        return redirect()->route('admin.problems.index')->with('message', 'Problem created.');
     }
 
     public function edit(Problem $problem): Response
     {
         $this->authorize('update', $problem);
+
+        $problem->load('testCases');
 
         return Inertia::render('Admin/Problems/Edit', [
             'problem' => [
@@ -54,6 +59,11 @@ class ProblemAdminController extends Controller
                 'difficulty' => $problem->difficulty,
                 'time_limit_ms' => $problem->time_limit_ms,
                 'memory_limit_mb' => $problem->memory_limit_mb,
+                'test_cases' => $problem->testCases->map(fn ($tc) => [
+                    'input' => $tc->input,
+                    'expected_output' => $tc->expected_output,
+                    'is_sample' => (bool) $tc->is_sample,
+                ])->all(),
             ],
         ]);
     }
@@ -61,9 +71,12 @@ class ProblemAdminController extends Controller
     public function update(UpdateProblemRequest $request, Problem $problem): RedirectResponse
     {
         $this->authorize('update', $problem);
-        $problem->update($request->validated());
 
-        return redirect()->route('admin.problems.index')->with('message', 'تم تحديث المسألة.');
+        $validated = $request->validated();
+        $problem->update($this->problemAttributes($validated));
+        $this->syncTestCases($problem, $validated['test_cases'] ?? []);
+
+        return redirect()->route('admin.problems.index')->with('message', 'Problem updated.');
     }
 
     public function destroy(Problem $problem): RedirectResponse
@@ -71,6 +84,47 @@ class ProblemAdminController extends Controller
         $this->authorize('delete', $problem);
         $problem->delete();
 
-        return redirect()->route('admin.problems.index')->with('message', 'تم حذف المسألة.');
+        return redirect()->route('admin.problems.index')->with('message', 'Problem deleted.');
+    }
+
+    /**
+     * Pull only the Problem columns out of the validated payload (excludes test_cases).
+     *
+     * @param  array<string, mixed>  $validated
+     * @return array<string, mixed>
+     */
+    private function problemAttributes(array $validated): array
+    {
+        return collect($validated)->only([
+            'title', 'slug', 'statement', 'difficulty', 'time_limit_ms', 'memory_limit_mb',
+        ])->all();
+    }
+
+    /**
+     * Replace the problem's test cases with the submitted set (ordinal = position).
+     * Skips fully-empty rows so trailing blanks in the editor are ignored.
+     *
+     * @param  array<int, array<string, mixed>>  $cases
+     */
+    private function syncTestCases(Problem $problem, array $cases): void
+    {
+        $problem->testCases()->delete();
+
+        $ordinal = 0;
+        foreach ($cases as $case) {
+            $input = (string) ($case['input'] ?? '');
+            $expected = (string) ($case['expected_output'] ?? '');
+
+            if (trim($input) === '' && trim($expected) === '') {
+                continue;
+            }
+
+            $problem->testCases()->create([
+                'ordinal' => $ordinal++,
+                'input' => $input,
+                'expected_output' => $expected,
+                'is_sample' => (bool) ($case['is_sample'] ?? false),
+            ]);
+        }
     }
 }
