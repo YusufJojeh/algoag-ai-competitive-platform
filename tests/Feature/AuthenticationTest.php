@@ -22,7 +22,7 @@ class AuthenticationTest extends TestCase
         $response->assertRedirect(route('login'));
     }
 
-    public function test_user_can_register_and_reach_home(): void
+    public function test_user_can_register_and_reach_onboarding(): void
     {
         $response = $this->post('/register', [
             'name' => 'New User',
@@ -31,7 +31,7 @@ class AuthenticationTest extends TestCase
             'password_confirmation' => 'password123',
         ]);
 
-        $response->assertRedirect(route('home'));
+        $response->assertRedirect(route('onboarding'));
         $this->assertAuthenticated();
     }
 

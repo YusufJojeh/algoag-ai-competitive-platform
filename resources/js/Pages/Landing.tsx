@@ -8,7 +8,7 @@ import GradientBackground from '@/components/landing/GradientBackground';
 import HeroSection from '@/components/landing/HeroSection';
 import HowItWorksTimeline from '@/components/landing/HowItWorksTimeline';
 import TrustSection from '@/components/landing/TrustSection';
-import VoiceVisionShowcase from '@/components/landing/VoiceVisionShowcase';
+import ArenaOverview from '@/components/landing/VoiceVisionShowcase';
 import { Button } from '@/components/ui/button';
 import { LanguageSwitchButton } from '@/components/layout/LanguageSwitch';
 import { useUiLocale } from '@/lib/ui-locale';
@@ -37,21 +37,21 @@ export default function Landing() {
     const disable3D = Boolean(e2e?.disable3D);
     const navLinks = locale === 'ar'
         ? [
-              { href: '#experience', label: 'التجربة' },
+              { href: '#experience', label: 'المنصة' },
               { href: '#features', label: 'الميزات' },
               { href: '#how-it-works', label: 'كيف يعمل' },
-              { href: '#trust', label: 'الثقة' },
+              { href: '#trust', label: 'الأمان' },
           ]
         : [
-              { href: '#experience', label: 'Experience' },
+              { href: '#experience', label: 'Platform' },
               { href: '#features', label: 'Features' },
               { href: '#how-it-works', label: 'How it works' },
-              { href: '#trust', label: 'Trust' },
+              { href: '#trust', label: 'Safety' },
           ];
 
     return (
         <>
-            <Head title={locale === 'ar' ? 'مساعد حل المسائل الصوتي والبصري' : 'AI Problem-Solving Voice + Vision Assistant'} />
+            <Head title={locale === 'ar' ? 'ALGOAG — منصة تدريب برمجة تنافسية + AI' : 'ALGOAG — Competitive Programming Arena + AI Coach'} />
             <MotionConfig reducedMotion="user">
                 <div className="relative min-h-screen overflow-hidden bg-slate-950 text-slate-100" data-testid="landing-page" dir={isRtl ? 'rtl' : 'ltr'}>
                     <GradientBackground />
@@ -64,7 +64,9 @@ export default function Landing() {
                                 </div>
                                 <div>
                                     <p className="text-sm font-semibold tracking-[0.2em] text-slate-300">ALGOAG</p>
-                                    <p className="text-xs text-slate-400">{locale === 'ar' ? 'مدرب مسائل مسابقات' : 'Competitive programming coach'}</p>
+                                    <p className="text-xs text-slate-400">
+                                        {locale === 'ar' ? 'ساحة برمجة تنافسية + AI' : 'Competitive programming arena + AI'}
+                                    </p>
                                 </div>
                             </Link>
 
@@ -76,7 +78,7 @@ export default function Landing() {
                                             <Link href="/assistant">{auth?.user?.name}</Link>
                                         </Button>
                                         <Button asChild>
-                                            <Link href="/assistant">{locale === 'ar' ? 'افتح المساعد' : 'Open assistant'}</Link>
+                                            <Link href="/problems">{locale === 'ar' ? 'حل مسألة' : 'Solve a problem'}</Link>
                                         </Button>
                                     </>
                                 ) : (
@@ -86,7 +88,7 @@ export default function Landing() {
                                         </Button>
                                         <Button asChild>
                                             <Link href="/register">
-                                                {locale === 'ar' ? 'ابدأ الآن' : 'Get started'}
+                                                {locale === 'ar' ? 'ابدأ التدريب' : 'Start Training'}
                                                 <Sparkles className="size-4" />
                                             </Link>
                                         </Button>
@@ -106,7 +108,7 @@ export default function Landing() {
 
                     <main className="relative z-10">
                         <HeroSection isAuthenticated={isAuthenticated} disable3D={disable3D} />
-                        <VoiceVisionShowcase />
+                        <ArenaOverview />
                         <FeatureGrid />
                         <HowItWorksTimeline />
                         <TrustSection />
@@ -115,14 +117,18 @@ export default function Landing() {
 
                     <footer className="relative z-10 border-t border-white/10 px-4 py-8 sm:px-6 lg:px-8">
                         <div className="mx-auto flex max-w-7xl flex-col gap-4 text-sm text-slate-400 sm:flex-row sm:items-center sm:justify-between">
-                            <p>{locale === 'ar' ? 'ALGOAG مدرب مسائل مسابقات برمجية يجمع النص، الصوت، الصورة، والتغذية الراجعة في مساحة واحدة.' : 'ALGOAG is a competitive-programming coach that brings text, voice, vision, and feedback into one workspace.'}</p>
+                            <p>
+                                {locale === 'ar'
+                                    ? 'ALGOAG منصة تدريب برمجة تنافسية بحكم محلي Python/C++، مسابقات، ترتيب، ومساعد AI يشرح التفكير الخوارزمي.'
+                                    : 'ALGOAG is a competitive programming training platform with local Python/C++ judging, contests, standings, and an AI coach that explains algorithmic thinking.'}
+                            </p>
                             <div className="flex items-center gap-4">
                                 <a href="#hero" className="inline-flex items-center gap-2 transition hover:text-white">
                                     {locale === 'ar' ? 'العودة للأعلى' : 'Back to top'}
                                     <ArrowUpLeft className="flip-rtl size-4" />
                                 </a>
-                                <Link href={isAuthenticated ? '/assistant' : '/login'} className="transition hover:text-white">
-                                    {isAuthenticated ? (locale === 'ar' ? 'المساعد' : 'Assistant') : (locale === 'ar' ? 'تسجيل الدخول' : 'Log in')}
+                                <Link href={isAuthenticated ? '/problems' : '/login'} className="transition hover:text-white">
+                                    {isAuthenticated ? (locale === 'ar' ? 'المسائل' : 'Problems') : (locale === 'ar' ? 'تسجيل الدخول' : 'Log in')}
                                 </Link>
                             </div>
                         </div>

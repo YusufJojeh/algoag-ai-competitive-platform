@@ -9,6 +9,7 @@ use App\Http\Controllers\CourseController;
 use App\Http\Controllers\E2ERuntimeController;
 use App\Http\Controllers\E2EVisualController;
 use App\Http\Controllers\LandingController;
+use App\Http\Controllers\OnboardingController;
 use App\Http\Controllers\SubmissionController;
 use App\Modules\Admin\Http\Controllers\AdminDashboardController;
 use App\Modules\Admin\Http\Controllers\AdminSettingsController;
@@ -67,8 +68,10 @@ Route::middleware($authGroupMiddleware)->group(function () use ($mutationActionM
     Route::post('/logout', [AuthenticatedSessionController::class, 'destroy'])->name('logout');
 
     Route::redirect('/dashboard', '/assistant')->name('home');
+    Route::get('/onboarding', [OnboardingController::class, 'index'])->name('onboarding');
 
     Route::middleware($mutationActionMiddleware)->group(function () {
+        Route::post('/onboarding', [OnboardingController::class, 'complete'])->name('onboarding.complete');
         Route::post('/suggest', [AlgorithmAssistantController::class, 'suggest'])->name('suggest');
         Route::post('/benchmark', [AlgorithmAssistantController::class, 'benchmark'])->name('benchmark');
         Route::post('/solve', [CodeforcesSolveController::class, 'solve'])->name('solve.run');
