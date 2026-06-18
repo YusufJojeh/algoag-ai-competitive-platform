@@ -78,7 +78,7 @@ Install Ollama from [ollama.com](https://ollama.com) and run `ollama pull llama3
 
 ```env
 ASSISTANT_AI_PROVIDER=openai
-OPENAI_API_KEY=sk-...
+OPENAI_API_KEY=your-openai-key
 ASSISTANT_AI_MODEL=gpt-4o-mini
 ASSISTANT_STT_PROVIDER=whisper
 ASSISTANT_TTS_PROVIDER=openai

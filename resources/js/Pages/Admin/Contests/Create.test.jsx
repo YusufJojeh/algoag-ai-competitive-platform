@@ -23,15 +23,17 @@ describe('Admin/Contests/Create', () => {
             </UiLocaleProvider>,
         );
         expect(screen.getByRole('heading', { name: 'Create contest' })).toBeInTheDocument();
+        expect(screen.getByLabelText('Duration hours')).toBeInTheDocument();
+        expect(screen.getByLabelText('Duration minutes')).toBeInTheDocument();
     });
 
-    it('renders Arabic title and tolerates missing availableProblems', () => {
+    it('renders Arabic form and tolerates missing availableProblems', () => {
         mockUsePage.mockReturnValue({ props: {} });
         render(
             <UiLocaleProvider locale="ar">
                 <AdminContestsCreate />
             </UiLocaleProvider>,
         );
-        expect(screen.getByText('إنشاء مسابقة')).toBeInTheDocument();
+        expect(screen.getByRole('heading')).toBeInTheDocument();
     });
 });

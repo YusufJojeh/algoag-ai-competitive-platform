@@ -6,6 +6,7 @@ use App\Http\Requests\StoreSubmissionRequest;
 use App\Jobs\ProcessSubmissionJob;
 use App\Models\Submission;
 use App\Modules\Arena\Models\Contest;
+use App\Modules\Problems\Models\Problem;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -66,6 +67,9 @@ class SubmissionController extends Controller
             abort_unless($contest->hasParticipant($userId), 403, 'يجب الانضمام إلى المسابقة أولاً.');
             abort_unless($problemId !== null && $contest->hasProblem((int) $problemId), 403, 'هذه المسألة ليست ضمن المسابقة.');
             abort_unless($contest->acceptsSubmissions(), 403, 'المسابقة لا تقبل الإرسالات حالياً.');
+        } elseif ($problemId !== null) {
+            $problem = Problem::query()->findOrFail($problemId);
+            abort_unless($problem->isPubliclyVisible() || $request->user()->is_admin, 404);
         }
 
         $submission = Submission::create([

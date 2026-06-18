@@ -118,8 +118,11 @@ describe('CodeforcesSolve', () => {
         const select = screen.getByRole('combobox', { name: /لغة الحل/ });
         expect(select).toBeInTheDocument();
         expect(select).toHaveValue('python');
-        expect(screen.getByRole('option', { name: 'C++' })).toBeInTheDocument();
+        const options = screen.getAllByRole('option');
+        expect(options).toHaveLength(2);
+        expect(options.map((option) => option.value)).toEqual(['python', 'cpp']);
         expect(screen.getByRole('option', { name: 'Python' })).toBeInTheDocument();
+        expect(screen.getByRole('option', { name: 'C++' })).toBeInTheDocument();
     });
 
     it('updates problem and language fields', () => {

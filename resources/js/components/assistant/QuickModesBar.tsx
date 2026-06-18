@@ -1,4 +1,5 @@
 import { getAssistantModeSelectGroups, getModeMeta, type AssistantMode } from '@/lib/assistant-workspace';
+import { Card } from '@/components/ui/card';
 import { useUiLocale } from '@/lib/ui-locale';
 
 type QuickModesBarProps = {
@@ -47,7 +48,7 @@ export default function QuickModesBar({ selectedMode, onModeChange, disabled = f
                 </select>
             </div>
 
-            <div id={descriptionId} className="flex items-start gap-3 rounded-2xl border border-[var(--app-border)] bg-slate-950/45 px-4 py-3" aria-live="polite">
+            <Card id={descriptionId} className="flex items-start gap-3 rounded-2xl px-4 py-3" aria-live="polite">
                 <div className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-xl border border-cyan-300/20 bg-cyan-400/10 text-cyan-200">
                     <SelectedIcon className="h-4 w-4" />
                 </div>
@@ -55,7 +56,7 @@ export default function QuickModesBar({ selectedMode, onModeChange, disabled = f
                     <p className="text-sm font-semibold text-[var(--app-foreground)]">{selectedMeta.label}</p>
                     <p className="mt-1 text-xs leading-5 text-[var(--app-muted-strong)]">{selectedMeta.description}</p>
                 </div>
-            </div>
+            </Card>
         </div>
     );
 }

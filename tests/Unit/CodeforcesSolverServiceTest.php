@@ -352,7 +352,7 @@ class CodeforcesSolverServiceTest extends TestCase
             'print("NO")',
             'print("NO")',
             'print("NO")',
-            'Ø§Ù„Ø´Ø±Ø­',
+            'الشرح',
             '[]',
         ];
         $ollama = $this->createMock(OllamaService::class);

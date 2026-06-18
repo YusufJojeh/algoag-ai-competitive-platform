@@ -22,19 +22,22 @@ const emptyContest = {
     slug: '',
     description: '',
     starts_at: '',
-    ends_at: '',
+    duration_hours: 0,
+    duration_minutes: 30,
     is_public: true,
+    is_practice: false,
     problems: [],
+    contest_only_problems: [],
 };
 
 export default function AdminContestsCreate() {
     const { locale } = useUiLocale();
     const t = copy[locale];
-    const { availableProblems = [] } = usePage().props;
+    const { availableProblems = [], scheduling = {} } = usePage().props;
 
     return (
         <AdminLayout title={t.title} subtitle={t.subtitle}>
-            <ContestForm initialData={emptyContest} availableProblems={availableProblems} submitLabel={t.submit} method="post" action="/admin/contests" />
+            <ContestForm initialData={emptyContest} availableProblems={availableProblems} scheduling={scheduling} submitLabel={t.submit} method="post" action="/admin/contests" />
         </AdminLayout>
     );
 }

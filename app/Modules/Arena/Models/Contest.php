@@ -28,6 +28,7 @@ class Contest extends Model
         'ends_at',
         'is_public',
         'is_practice',
+        'problems_published_at',
         'created_by',
     ];
 
@@ -36,6 +37,7 @@ class Contest extends Model
         'ends_at' => 'datetime',
         'is_public' => 'boolean',
         'is_practice' => 'boolean',
+        'problems_published_at' => 'datetime',
     ];
 
     public function getRouteKeyName(): string
@@ -71,12 +73,12 @@ class Contest extends Model
 
     public function hasStarted(): bool
     {
-        return $this->starts_at === null || $this->starts_at->isPast();
+        return $this->starts_at === null || $this->starts_at->lte(now(config('app.timezone')));
     }
 
     public function hasEnded(): bool
     {
-        return $this->ends_at !== null && $this->ends_at->isPast();
+        return $this->ends_at !== null && $this->ends_at->lte(now(config('app.timezone')));
     }
 
     public function isRunning(): bool
@@ -105,7 +107,7 @@ class Contest extends Model
             return true;
         }
 
-        $now ??= now();
+        $now ??= now(config('app.timezone'));
 
         $started = $this->starts_at !== null && $this->starts_at->lte($now);
         if (! $started) {
@@ -113,6 +115,15 @@ class Contest extends Model
         }
 
         return $this->ends_at === null || $this->ends_at->gte($now);
+    }
+
+    public function allowsProblemViewing(?\Carbon\CarbonInterface $now = null): bool
+    {
+        if ($this->is_practice) {
+            return true;
+        }
+
+        return $this->acceptsSubmissions($now);
     }
 
     public function hasParticipant(int $userId): bool

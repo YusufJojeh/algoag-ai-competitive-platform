@@ -27,11 +27,11 @@ class AlgorithmAssistantControllerTest extends TestCase
         $this->actingAs($this->user);
     }
 
-    public function test_dashboard_home_redirects_to_assistant_workspace(): void
+    public function test_dashboard_home_redirects_to_problems(): void
     {
         $response = $this->get('/dashboard');
 
-        $response->assertRedirect('/assistant');
+        $response->assertRedirect('/problems');
     }
 
     public function test_suggest_requires_problem_min_length(): void

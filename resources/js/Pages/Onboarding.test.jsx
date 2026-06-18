@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { act, render, screen, fireEvent } from '@testing-library/react';
 import Onboarding from './Onboarding';
 import { UiLocaleProvider } from '@/lib/ui-locale';
 
@@ -25,7 +25,13 @@ function renderPage(locale = 'en') {
     );
 }
 
-describe('Onboarding page — English', () => {
+async function waitForStepTransition() {
+    await act(async () => {
+        await new Promise((r) => setTimeout(r, 250));
+    });
+}
+
+describe('Onboarding page - English', () => {
     beforeEach(() => vi.clearAllMocks());
 
     it('renders welcome heading', () => {
@@ -50,7 +56,7 @@ describe('Onboarding page — English', () => {
     it('advances to step 2 (level) after selecting goal', async () => {
         renderPage('en');
         fireEvent.click(screen.getByRole('button', { name: 'Learn algorithms' }));
-        await new Promise((r) => setTimeout(r, 250));
+        await waitForStepTransition();
         expect(screen.getByText('What is your current level?')).toBeInTheDocument();
         expect(screen.getByRole('button', { name: 'Beginner' })).toBeInTheDocument();
         expect(screen.getByRole('button', { name: 'Intermediate' })).toBeInTheDocument();
@@ -60,9 +66,9 @@ describe('Onboarding page — English', () => {
     it('advances to step 3 (language) after selecting level', async () => {
         renderPage('en');
         fireEvent.click(screen.getByRole('button', { name: 'Learn algorithms' }));
-        await new Promise((r) => setTimeout(r, 250));
+        await waitForStepTransition();
         fireEvent.click(screen.getByRole('button', { name: 'Beginner' }));
-        await new Promise((r) => setTimeout(r, 250));
+        await waitForStepTransition();
         expect(screen.getByText('Preferred submission language?')).toBeInTheDocument();
         expect(screen.getByRole('button', { name: 'Python' })).toBeInTheDocument();
         expect(screen.getByRole('button', { name: 'C++' })).toBeInTheDocument();
@@ -71,9 +77,9 @@ describe('Onboarding page — English', () => {
     it('language options include both Python and C++', async () => {
         renderPage('en');
         fireEvent.click(screen.getByRole('button', { name: 'Learn algorithms' }));
-        await new Promise((r) => setTimeout(r, 250));
+        await waitForStepTransition();
         fireEvent.click(screen.getByRole('button', { name: 'Beginner' }));
-        await new Promise((r) => setTimeout(r, 250));
+        await waitForStepTransition();
         expect(screen.getByRole('button', { name: 'Python' })).toBeInTheDocument();
         expect(screen.getByRole('button', { name: 'C++' })).toBeInTheDocument();
     });
@@ -81,11 +87,11 @@ describe('Onboarding page — English', () => {
     it('shows first-run banner after completing all steps', async () => {
         renderPage('en');
         fireEvent.click(screen.getByRole('button', { name: 'Learn algorithms' }));
-        await new Promise((r) => setTimeout(r, 250));
+        await waitForStepTransition();
         fireEvent.click(screen.getByRole('button', { name: 'Beginner' }));
-        await new Promise((r) => setTimeout(r, 250));
+        await waitForStepTransition();
         fireEvent.click(screen.getByRole('button', { name: 'Python' }));
-        await new Promise((r) => setTimeout(r, 250));
+        await waitForStepTransition();
         expect(screen.getByText('Start clean')).toBeInTheDocument();
         expect(screen.getByText(/Solve one problem, submit your code/)).toBeInTheDocument();
     });
@@ -136,7 +142,7 @@ describe('Onboarding page — English', () => {
     });
 });
 
-describe('Onboarding page — Arabic', () => {
+describe('Onboarding page - Arabic', () => {
     beforeEach(() => vi.clearAllMocks());
 
     it('renders Arabic welcome heading', () => {
@@ -160,9 +166,9 @@ describe('Onboarding page — Arabic', () => {
     it('renders C++ and Python options in Arabic language step', async () => {
         renderPage('ar');
         fireEvent.click(screen.getByRole('button', { name: 'تعلم الخوارزميات' }));
-        await new Promise((r) => setTimeout(r, 250));
+        await waitForStepTransition();
         fireEvent.click(screen.getByRole('button', { name: 'مبتدئ' }));
-        await new Promise((r) => setTimeout(r, 250));
+        await waitForStepTransition();
         expect(screen.getByRole('button', { name: 'C++' })).toBeInTheDocument();
         expect(screen.getByRole('button', { name: 'Python' })).toBeInTheDocument();
     });

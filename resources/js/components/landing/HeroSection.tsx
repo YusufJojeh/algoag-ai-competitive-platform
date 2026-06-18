@@ -6,6 +6,7 @@ import { ArrowUpLeft, Code2, Shield, Trophy } from 'lucide-react';
 import MotionReveal from '@/components/landing/MotionReveal';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Card } from '@/components/ui/card';
 import { useUiLocale } from '@/lib/ui-locale';
 
 interface HeroSectionProps {
@@ -117,10 +118,10 @@ export default function HeroSection({ isAuthenticated, disable3D = false }: Hero
 
                     <MotionReveal delay={0.18} className="mt-10 grid gap-3 sm:grid-cols-3">
                         {t.stats.map((item) => (
-                            <div key={item.label} className="rounded-[26px] border border-white/10 bg-white/[0.04] p-4 backdrop-blur-sm">
+                            <Card key={item.label} className="rounded-[26px] border-white/10 bg-white/[0.04] p-4 backdrop-blur-sm">
                                 <p className="text-xs uppercase tracking-[0.22em] text-slate-400">{item.label}</p>
                                 <p className="mt-2 text-sm leading-6 text-slate-200">{item.value}</p>
-                            </div>
+                            </Card>
                         ))}
                     </MotionReveal>
 
@@ -128,11 +129,11 @@ export default function HeroSection({ isAuthenticated, disable3D = false }: Hero
                         {t.cards.map((card, i) => {
                             const Icon = cardIcons[i];
                             return (
-                                <div key={card.title} className={`rounded-[28px] border p-5 ${cardBorder[card.tone]}`}>
+                                <Card key={card.title} className={`rounded-[28px] p-5 ${cardBorder[card.tone]}`}>
                                     <Icon className={`size-5 ${cardIconColor[card.tone]}`} />
                                     <p className="mt-4 text-sm font-medium text-white">{card.title}</p>
                                     <p className="mt-2 text-sm leading-6 text-slate-300">{card.body}</p>
-                                </div>
+                                </Card>
                             );
                         })}
                     </MotionReveal>

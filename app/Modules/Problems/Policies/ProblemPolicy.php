@@ -14,7 +14,7 @@ class ProblemPolicy
 
     public function view(User $user, Problem $problem): bool
     {
-        return true;
+        return $problem->isPubliclyVisible() || $user->is_admin === true;
     }
 
     public function create(User $user): bool

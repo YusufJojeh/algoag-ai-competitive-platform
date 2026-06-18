@@ -108,7 +108,11 @@ class DatabaseSeeder extends Seeder
         foreach ($problems as $problemSeed) {
             $problem = Problem::query()->updateOrCreate(
                 ['slug' => $problemSeed['data']['slug']],
-                $problemSeed['data']
+                [
+                    ...$problemSeed['data'],
+                    'is_public' => true,
+                    'published_at' => now(),
+                ]
             );
 
             $problem->tags()->sync(

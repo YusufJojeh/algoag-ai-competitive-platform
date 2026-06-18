@@ -3,6 +3,8 @@
 namespace Tests\Feature;
 
 use App\Models\User;
+use App\Models\Tag;
+use App\Modules\Arena\Models\Contest;
 use App\Modules\Problems\Models\Problem;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -155,6 +157,55 @@ class ProblemAdminControllerTest extends TestCase
         ]);
     }
 
+    public function test_admin_can_create_problem_with_multiple_tags_without_duplicate_pivots(): void
+    {
+        $admin = User::factory()->admin()->create();
+        $math = Tag::query()->create(['name' => 'Math', 'slug' => 'math']);
+        $graphs = Tag::query()->create(['name' => 'Graphs', 'slug' => 'graphs']);
+
+        $this->actingAs($admin)->post('/admin/problems', [
+            'title' => 'Tagged',
+            'slug' => 'tagged-problem',
+            'statement' => 'Statement text.',
+            'difficulty' => 'medium',
+            'time_limit_ms' => 2000,
+            'memory_limit_mb' => 512,
+            'tag_ids' => [$math->id, $graphs->id],
+        ])->assertRedirect(route('admin.problems.index'));
+
+        $problem = Problem::query()->where('slug', 'tagged-problem')->firstOrFail();
+        $this->assertSame(2, $problem->tags()->count());
+        $this->assertDatabaseCount('problem_tag', 2);
+    }
+
+    public function test_admin_can_edit_problem_tags_and_public_problem_shows_them(): void
+    {
+        $admin = User::factory()->admin()->create();
+        $user = User::factory()->create();
+        $math = Tag::query()->create(['name' => 'Math', 'slug' => 'math']);
+        $dp = Tag::query()->create(['name' => 'DP', 'slug' => 'dp']);
+        $problem = Problem::factory()->create(['slug' => 'tag-sync']);
+        $problem->tags()->attach($math);
+
+        $this->actingAs($admin)->put('/admin/problems/'.$problem->id, [
+            'title' => $problem->title,
+            'slug' => $problem->slug,
+            'statement' => $problem->statement,
+            'difficulty' => $problem->difficulty,
+            'time_limit_ms' => $problem->time_limit_ms,
+            'memory_limit_mb' => $problem->memory_limit_mb,
+            'tag_ids' => [$dp->id],
+        ])->assertRedirect(route('admin.problems.index'));
+
+        $this->assertTrue($problem->fresh()->tags()->whereKey($dp->id)->exists());
+        $this->assertFalse($problem->fresh()->tags()->whereKey($math->id)->exists());
+
+        $this->actingAs($user)->get('/problems/'.$problem->id)
+            ->assertInertia(fn ($page) => $page
+                ->where('problem.tags.0.name', 'DP')
+            );
+    }
+
     public function test_admin_can_update_problem(): void
     {
         $admin = User::factory()->admin()->create();
@@ -198,5 +249,41 @@ class ProblemAdminControllerTest extends TestCase
 
         $response->assertRedirect(route('admin.problems.index'));
         $this->assertDatabaseMissing('problems', ['id' => $p->id]);
+    }
+
+    public function test_admin_can_edit_private_contest_problem_without_publishing_it(): void
+    {
+        $admin = User::factory()->admin()->create();
+        $user = User::factory()->create();
+        $contest = Contest::factory()->create();
+        $problem = Problem::factory()->contestOnly()->create([
+            'title' => 'Private Old',
+            'slug' => 'private-old',
+            'published_from_contest_id' => $contest->id,
+        ]);
+
+        $response = $this->actingAs($admin)->put('/admin/problems/'.$problem->id, [
+            'title' => 'Private New',
+            'slug' => 'private-old',
+            'statement' => 'Updated private statement.',
+            'difficulty' => 'extreme',
+            'time_limit_ms' => 2500,
+            'memory_limit_mb' => 512,
+            'test_cases' => [
+                ['input' => '1', 'expected_output' => '1', 'is_sample' => true],
+            ],
+        ]);
+
+        $response->assertRedirect(route('admin.problems.index'));
+        $problem->refresh();
+
+        $this->assertSame('Private New', $problem->title);
+        $this->assertSame('extreme', $problem->difficulty);
+        $this->assertFalse((bool) $problem->is_public);
+        $this->assertNull($problem->published_at);
+        $this->assertSame($contest->id, $problem->published_from_contest_id);
+        $this->assertSame(1, $problem->testCases()->count());
+
+        $this->actingAs($user)->get('/problems/'.$problem->id)->assertForbidden();
     }
 }

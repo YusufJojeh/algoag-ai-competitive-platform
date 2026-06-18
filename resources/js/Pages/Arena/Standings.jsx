@@ -2,6 +2,8 @@ import { Link, usePage } from '@inertiajs/react';
 
 import AppLayout from '@/components/layout/AppLayout';
 import { Button } from '@/components/ui/button';
+import { Card } from '@/components/ui/card';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { useUiLocale } from '@/lib/ui-locale';
 
 const copy = {
@@ -51,38 +53,38 @@ export default function ArenaStandings() {
         >
             <div className="mx-auto max-w-5xl" dir={isRtl ? 'rtl' : 'ltr'}>
                 {rows.length === 0 ? (
-                    <div className="rounded-[30px] border border-dashed border-[var(--app-border)] bg-slate-950/35 px-6 py-14 text-center">
+                    <Card className="border-dashed bg-slate-950/35 px-6 py-14 text-center">
                         <p className="text-lg font-semibold text-[var(--app-foreground)]">{t.empty}</p>
-                    </div>
+                    </Card>
                 ) : (
-                    <div className="overflow-x-auto rounded-[28px] border border-[var(--app-border)] bg-slate-950/45">
-                        <table className="w-full text-sm">
-                            <thead>
-                                <tr className="border-b border-[var(--app-border)] text-[var(--app-muted)]">
-                                    <th className="px-4 py-3 text-start">{t.rank}</th>
-                                    <th className="px-4 py-3 text-start">{t.who}</th>
-                                    <th className="px-4 py-3 text-center">{t.solved}</th>
-                                    <th className="px-4 py-3 text-center">{t.penalty}</th>
+                    <Card className="overflow-hidden">
+                        <Table>
+                            <TableHeader>
+                                <TableRow className="hover:bg-transparent">
+                                    <TableHead>{t.rank}</TableHead>
+                                    <TableHead>{t.who}</TableHead>
+                                    <TableHead className="text-center">{t.solved}</TableHead>
+                                    <TableHead className="text-center">{t.penalty}</TableHead>
                                     {labels.map((l) => (
-                                        <th key={l.id} className="px-3 py-3 text-center font-mono">{l.label}</th>
+                                        <TableHead key={l.id} className="text-center font-mono">{l.label}</TableHead>
                                     ))}
-                                </tr>
-                            </thead>
-                            <tbody>
+                                </TableRow>
+                            </TableHeader>
+                            <TableBody>
                                 {rows.map((row) => (
-                                    <tr key={row.rank} className="border-b border-[var(--app-border)]/50">
-                                        <td className="px-4 py-3">{row.rank}</td>
-                                        <td className="px-4 py-3 text-[var(--app-foreground)]">{row.user_name}</td>
-                                        <td className="px-4 py-3 text-center">{row.solved}</td>
-                                        <td className="px-4 py-3 text-center">{row.penalty}</td>
+                                    <TableRow key={row.rank}>
+                                        <TableCell>{row.rank}</TableCell>
+                                        <TableCell className="font-medium text-[var(--app-foreground)]">{row.user_name}</TableCell>
+                                        <TableCell className="text-center">{row.solved}</TableCell>
+                                        <TableCell className="text-center">{row.penalty}</TableCell>
                                         {labels.map((l) => (
-                                            <td key={l.id} className="px-3 py-3 text-center text-cyan-200">{statusFor(row, l.id)}</td>
+                                            <TableCell key={l.id} className="text-center text-cyan-200">{statusFor(row, l.id)}</TableCell>
                                         ))}
-                                    </tr>
+                                    </TableRow>
                                 ))}
-                            </tbody>
-                        </table>
-                    </div>
+                            </TableBody>
+                        </Table>
+                    </Card>
                 )}
             </div>
         </AppLayout>

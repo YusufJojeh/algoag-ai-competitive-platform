@@ -1,6 +1,7 @@
 import type { LucideIcon } from 'lucide-react';
 
 import { Badge } from '@/components/ui/badge';
+import { Card } from '@/components/ui/card';
 import { useUiLocale } from '@/lib/ui-locale';
 
 type AssistantStateCardProps = {
@@ -22,7 +23,7 @@ export default function AssistantStateCard({ icon: Icon, title, description, ton
     const { locale } = useUiLocale();
 
     return (
-        <div className={`rounded-[26px] border px-4 py-4 shadow-sm ${toneClasses[tone]}`}>
+        <Card className={`rounded-[26px] px-4 py-4 ${toneClasses[tone]}`}>
             <div className="flex items-start justify-between gap-3">
                 <div className="flex items-start gap-3">
                     <div className="mt-0.5 flex h-10 w-10 items-center justify-center rounded-[18px] bg-white/70">
@@ -49,6 +50,6 @@ export default function AssistantStateCard({ icon: Icon, title, description, ton
                     {locale === 'ar' ? 'حالة' : 'Status'}
                 </Badge>
             </div>
-        </div>
+        </Card>
     );
 }

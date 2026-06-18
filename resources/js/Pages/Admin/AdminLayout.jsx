@@ -1,6 +1,7 @@
 import { Link } from '@inertiajs/react';
-import { BarChart3, Database, Languages, Settings, Trophy, Users } from 'lucide-react';
+import { BarChart3, BookOpen, Database, Settings, Tags, Trophy, Users } from 'lucide-react';
 
+import { LanguageSwitchButton } from '@/components/layout/LanguageSwitch';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
@@ -12,43 +13,41 @@ export const adminCopy = {
         brand: 'ALGOAG',
         section: 'Administration',
         dashboard: 'Dashboard',
+        topics: 'Topics',
+        courses: 'Paths',
         problems: 'Problems',
-        contests: 'Contests',
+        contests: 'Arena',
         users: 'Users',
         settings: 'Settings',
         backToWorkspace: 'Workspace',
-        switchLanguage: 'العربية',
-        openNavigation: 'Open navigation',
-        closeNavigation: 'Close navigation',
     },
     ar: {
         brand: 'ALGOAG',
         section: 'الإدارة',
         dashboard: 'لوحة التحكم',
+        topics: 'الموضوعات',
+        courses: 'المسارات',
         problems: 'المسائل',
         contests: 'المسابقات',
         users: 'المستخدمون',
         settings: 'الإعدادات',
         backToWorkspace: 'مساحة العمل',
-        switchLanguage: 'English',
-        openNavigation: 'افتح التنقل',
-        closeNavigation: 'أغلق التنقل',
     },
 };
 
 const navItems = [
-    { href: '/admin', labelKey: 'dashboard', icon: BarChart3 },
+    { href: '/admin/users', labelKey: 'users', icon: Users },
+    { href: '/admin/topics', labelKey: 'topics', icon: Tags },
+    { href: '/admin/courses', labelKey: 'courses', icon: BookOpen },
     { href: '/admin/problems', labelKey: 'problems', icon: Database },
     { href: '/admin/contests', labelKey: 'contests', icon: Trophy },
-    { href: '/admin/users', labelKey: 'users', icon: Users },
     { href: '/admin/settings', labelKey: 'settings', icon: Settings },
 ];
 
 export default function AdminLayout({ title, subtitle, badge, actions, children }) {
-    const { locale, dir, isRtl, switchHref } = useUiLocale();
+    const { locale, dir, isRtl } = useUiLocale();
     const copy = adminCopy[locale];
     const currentPath = typeof window !== 'undefined' ? window.location.pathname.replace(/\/$/, '') || '/admin' : '/admin';
-    const nextLocale = locale === 'ar' ? 'en' : 'ar';
 
     return (
         <div className="app-shell-bg min-h-screen p-4 text-[var(--app-foreground)] lg:p-5" dir={dir} lang={locale}>
@@ -57,12 +56,7 @@ export default function AdminLayout({ title, subtitle, badge, actions, children 
                     <AdminNav copy={copy} currentPath={currentPath} isRtl={isRtl} />
                     <div className="mt-auto flex flex-col gap-3">
                         <Separator />
-                        <Button asChild variant="surface" size="sm">
-                            <Link href={switchHref(nextLocale)}>
-                                <Languages data-icon="inline-start" />
-                                {copy.switchLanguage}
-                            </Link>
-                        </Button>
+                        <LanguageSwitchButton className="rounded-2xl border-[var(--app-border)] bg-slate-950/80 px-3 shadow-lg shadow-black/20 backdrop-blur" />
                         <Button asChild variant="ghost" size="sm">
                             <Link href="/assistant">{copy.backToWorkspace}</Link>
                         </Button>

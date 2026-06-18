@@ -33,7 +33,7 @@ class CourseController extends Controller
     {
         $this->authorize('view', $course);
 
-        $course->load('lessons');
+        $course->load('publishedLessons');
 
         return Inertia::render('Courses/Show', [
             'course' => [
@@ -41,11 +41,14 @@ class CourseController extends Controller
                 'title' => $course->title,
                 'slug' => $course->slug,
                 'description' => $course->description,
-                'lessons' => $course->lessons->map(fn ($l) => [
+                'lessons' => $course->publishedLessons->map(fn ($l) => [
                     'id' => $l->id,
                     'title' => $l->title,
+                    'description' => $l->description,
                     'position' => $l->position,
-                    'body' => $l->body,
+                    'content' => $l->content ?? $l->body,
+                    'body' => $l->content ?? $l->body,
+                    'video_url' => $l->video_url,
                 ])->all(),
             ],
         ]);

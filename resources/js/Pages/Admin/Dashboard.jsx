@@ -3,6 +3,7 @@ import { Activity, BookOpen, Bot, Database, FileCode2, Shield, Users } from 'luc
 
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { useUiLocale } from '@/lib/ui-locale';
 import AdminLayout from './AdminLayout';
@@ -88,7 +89,8 @@ export default function AdminDashboard() {
                     const Icon = statIcons[key] ?? Activity;
 
                     return (
-                        <div key={key} className="app-surface-muted rounded-[28px] p-5">
+                        <Card key={key} className="bg-slate-950/55">
+                            <CardContent className="p-5">
                             <div className="flex items-center justify-between gap-4">
                                 <p className="text-sm text-[var(--app-muted)]">{t.stats[key] ?? key}</p>
                                 <div className="flex size-11 items-center justify-center rounded-[18px] border border-cyan-300/15 bg-cyan-400/10 text-cyan-200">
@@ -96,7 +98,8 @@ export default function AdminDashboard() {
                                 </div>
                             </div>
                             <p className="mt-4 text-3xl font-semibold text-[var(--app-foreground)]">{value}</p>
-                        </div>
+                            </CardContent>
+                        </Card>
                     );
                 })}
             </section>
@@ -126,15 +129,15 @@ function RecentPanel({ title, empty, children }) {
     const hasChildren = Array.isArray(children) ? children.length > 0 : Boolean(children);
 
     return (
-        <div className="app-surface-muted rounded-[28px]">
-            <div className="px-5 py-4">
-                <h2 className="text-sm font-semibold text-[var(--app-foreground)]">{title}</h2>
-            </div>
+        <Card className="overflow-hidden bg-slate-950/55">
+            <CardHeader className="px-5 py-4">
+                <CardTitle className="text-sm">{title}</CardTitle>
+            </CardHeader>
             <Separator />
             <div className="flex flex-col">
                 {hasChildren ? children : <p className="px-5 py-5 text-sm text-[var(--app-muted)]">{empty}</p>}
             </div>
-        </div>
+        </Card>
     );
 }
 

@@ -1,4 +1,5 @@
 import MotionReveal from '@/components/landing/MotionReveal';
+import { Card } from '@/components/ui/card';
 import { useUiLocale } from '@/lib/ui-locale';
 import { BrainCircuit, Code2, FlaskConical, Lock, Shield, Trophy } from 'lucide-react';
 
@@ -26,10 +27,12 @@ export default function FeatureGrid() {
         <section className="landing-section-shell px-4 py-12 sm:px-6 lg:px-8 lg:py-16" id="features">
             <div className="mx-auto grid max-w-7xl gap-4 md:grid-cols-2 xl:grid-cols-3">
                 {features.map((feature, index) => (
-                    <MotionReveal key={feature.title} delay={index * 0.06} className="rounded-[30px] border border-white/10 bg-white/[0.04] p-6 backdrop-blur">
-                        <feature.icon className="h-5 w-5 text-cyan-200" />
-                        <p className="mt-5 text-sm font-semibold text-white">{feature.title}</p>
-                        <p className="mt-3 text-sm leading-6 text-slate-300">{feature.description}</p>
+                    <MotionReveal key={feature.title} delay={index * 0.06}>
+                        <Card className="h-full rounded-[30px] border-white/10 bg-white/[0.04] p-6 backdrop-blur">
+                            <feature.icon className="h-5 w-5 text-cyan-200" />
+                            <p className="mt-5 text-sm font-semibold text-white">{feature.title}</p>
+                            <p className="mt-3 text-sm leading-6 text-slate-300">{feature.description}</p>
+                        </Card>
                     </MotionReveal>
                 ))}
             </div>

@@ -10,3 +10,4 @@ Artisan::command('inspire', function () {
 
 Schedule::command('assistant:cleanup')->hourly();
 Schedule::command('ai:mark-stale-jobs')->everyFiveMinutes();
+Schedule::command('arena:publish-ended-problems')->everyTenMinutes()->withoutOverlapping();

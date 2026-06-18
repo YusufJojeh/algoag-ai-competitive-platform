@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Head, Link, router, usePage } from '@inertiajs/react';
 import { BrainCircuit, CheckCircle2, Code2, Trophy } from 'lucide-react';
 
@@ -8,9 +8,9 @@ import { useUiLocale } from '@/lib/ui-locale';
 
 const copy = {
     ar: {
-        title: 'ALGOAG — ابدأ',
+        title: 'ALGOAG - ابدأ',
         welcome: 'أهلاً بك في ALGOAG',
-        subtitle: 'دقيقة واحدة لنفهم أهدافك ونوجهك للخطوة الصحيحة.',
+        subtitle: 'دقيقة واحدة لنفهم أهدافك ونوجّهك للخطوة الصحيحة.',
         steps: [
             {
                 id: 'goal',
@@ -53,7 +53,7 @@ const copy = {
         done: 'ابدأ التدريب',
     },
     en: {
-        title: 'ALGOAG — Get started',
+        title: 'ALGOAG - Get started',
         welcome: 'Welcome to ALGOAG',
         subtitle: 'One minute to set your goal and get pointed in the right direction.',
         steps: [
@@ -103,6 +103,7 @@ export default function Onboarding() {
     const { locale, isRtl } = useUiLocale();
     const t = copy[locale];
     const { auth } = usePage().props;
+    const timerRef = useRef(null);
 
     const [step, setStep] = useState(0);
     const [answers, setAnswers] = useState({});
@@ -111,17 +112,32 @@ export default function Onboarding() {
     const isDone = step >= totalSteps;
     const currentStep = isDone ? null : t.steps[step];
 
+    useEffect(() => () => {
+        if (timerRef.current) {
+            window.clearTimeout(timerRef.current);
+        }
+    }, []);
+
     function selectOption(value) {
         const id = currentStep?.id;
         if (!id) return;
+
         setAnswers((prev) => ({ ...prev, [id]: value }));
-        setTimeout(() => {
-            if (step < totalSteps - 1) {
-                setStep((s) => s + 1);
-            } else {
-                setStep(totalSteps);
-            }
+        if (timerRef.current) {
+            window.clearTimeout(timerRef.current);
+        }
+        timerRef.current = window.setTimeout(() => {
+            setStep((current) => (current < totalSteps - 1 ? current + 1 : totalSteps));
+            timerRef.current = null;
         }, 180);
+    }
+
+    function skip() {
+        if (timerRef.current) {
+            window.clearTimeout(timerRef.current);
+            timerRef.current = null;
+        }
+        setStep(totalSteps);
     }
 
     function complete() {
@@ -133,7 +149,6 @@ export default function Onboarding() {
             <Head title={t.title} />
             <div className="app-shell-bg min-h-screen px-4 py-8 lg:px-6" dir={isRtl ? 'rtl' : 'ltr'}>
                 <div className="mx-auto max-w-xl">
-                    {/* Logo */}
                     <div className="mb-8 flex items-center gap-3">
                         <div className="flex size-10 items-center justify-center rounded-2xl border border-white/10 bg-white/6 text-cyan-200">
                             <BrainCircuit className="size-5" />
@@ -141,7 +156,6 @@ export default function Onboarding() {
                         <p className="text-sm font-semibold tracking-[0.2em] text-slate-400">ALGOAG</p>
                     </div>
 
-                    {/* Header */}
                     <div className="mb-8">
                         <Badge variant="violet" className="mb-3">{locale === 'ar' ? 'إعداد الحساب' : 'Account setup'}</Badge>
                         <h1 className="text-3xl font-semibold text-[var(--app-foreground)]">
@@ -150,7 +164,6 @@ export default function Onboarding() {
                         <p className="mt-2 text-sm leading-6 text-[var(--app-muted)]">{t.subtitle}</p>
                     </div>
 
-                    {/* Progress dots */}
                     <div className="mb-8 flex gap-2">
                         {t.steps.map((_, i) => (
                             <div
@@ -163,14 +176,13 @@ export default function Onboarding() {
                         <div className={`h-1.5 flex-1 rounded-full transition-colors duration-300 ${isDone ? 'bg-emerald-400' : 'bg-white/10'}`} />
                     </div>
 
-                    {/* Step content */}
                     {!isDone && currentStep && (
                         <div className="rounded-[32px] border border-[var(--app-border)] bg-slate-950/72 p-6 shadow-[0_24px_80px_rgba(2,6,23,0.42)] sm:p-8">
                             <p className="mb-5 text-xs font-semibold uppercase tracking-[0.22em] text-[var(--app-muted)]">
                                 {step + 1} / {totalSteps}
                             </p>
                             <h2 className="mb-5 text-xl font-semibold text-[var(--app-foreground)]">{currentStep.label}</h2>
-                            <div className="space-y-3">
+                            <div className="flex flex-col gap-3">
                                 {currentStep.options.map((opt) => {
                                     const isSelected = answers[currentStep.id] === opt.value;
                                     return (
@@ -195,7 +207,7 @@ export default function Onboarding() {
                                     type="button"
                                     variant="ghost"
                                     size="sm"
-                                    onClick={() => setStep(totalSteps)}
+                                    onClick={skip}
                                     className="text-[var(--app-muted)]"
                                 >
                                     {t.skip}
@@ -204,9 +216,8 @@ export default function Onboarding() {
                         </div>
                     )}
 
-                    {/* First-run banner (final step) */}
                     {isDone && (
-                        <div className="space-y-4">
+                        <div className="flex flex-col gap-4">
                             <div className="rounded-[32px] border border-emerald-400/20 bg-emerald-400/8 p-6 sm:p-8">
                                 <div className="flex items-center gap-2 text-emerald-300">
                                     <CheckCircle2 className="size-5" />
@@ -217,7 +228,7 @@ export default function Onboarding() {
 
                             <div className="rounded-[32px] border border-[var(--app-border)] bg-slate-950/72 p-6 sm:p-8">
                                 <p className="mb-4 text-xs font-semibold uppercase tracking-[0.22em] text-[var(--app-muted)]">{t.action}</p>
-                                <div className="space-y-3">
+                                <div className="flex flex-col gap-3">
                                     {t.actions.map((action) => {
                                         const Icon = action.icon;
                                         return (

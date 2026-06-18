@@ -4,6 +4,8 @@
 /public/hot
 /public/storage
 /storage/*.key
+/storage/app/private
+/storage/framework/testing
 /vendor
 .env
 .env.backup
@@ -27,6 +29,10 @@ yarn.log
 /playwright-report
 /test-results
 *.log
+
+# Generated demo/export artifacts
+/docs/hyperframes
+/docs/algoag-demo-*
 
 # OS
 .DS_Store

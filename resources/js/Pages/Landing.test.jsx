@@ -27,11 +27,12 @@ vi.mock('@/components/layout/LanguageSwitch', () => ({
     LanguageSwitchButton: () => <button type="button">Lang</button>,
 }));
 
-function renderLanding(locale = 'en', isAuthenticated = false) {
+function renderLanding(locale = 'en', isAuthenticated = false, topics = []) {
     mockUsePage.mockReturnValue({
         props: {
             auth: isAuthenticated ? { user: { id: 1, name: 'Alice', email: 'a@a.com', is_admin: false } } : { user: null },
             e2e: { disable3D: true },
+            topics,
             uiLocale: locale,
         },
     });
@@ -137,6 +138,14 @@ describe('Landing page — English', () => {
     it('ALGOAG brand text is present', () => {
         renderLanding('en', false);
         expect(screen.getAllByText('ALGOAG').length).toBeGreaterThan(0);
+    });
+
+    it('renders admin topics from landing props with problem filter links', () => {
+        renderLanding('en', false, [{ id: 1, name: 'Two Pointers', slug: 'two-pointers', problems_count: 3 }]);
+
+        const topic = screen.getByRole('link', { name: /Two Pointers/ });
+        expect(topic).toHaveAttribute('href', '/problems?topic=two-pointers');
+        expect(screen.getByText('(3)')).toBeInTheDocument();
     });
 });
 

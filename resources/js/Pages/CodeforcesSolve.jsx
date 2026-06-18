@@ -88,8 +88,8 @@ export default function CodeforcesSolve() {
                                 onChange={(e) => setData('language', e.target.value)}
                                 className="rounded-2xl border border-[var(--app-border)] bg-slate-950/55 px-3 py-2 text-slate-100 outline-none focus:border-[var(--app-border-strong)]"
                             >
-                                <option value="cpp">C++</option>
                                 <option value="python">Python</option>
+                                <option value="cpp">C++</option>
                             </select>
                         </label>
                     </div>

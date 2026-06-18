@@ -10,8 +10,16 @@ class Lesson extends Model
     protected $fillable = [
         'course_id',
         'title',
+        'description',
         'position',
         'body',
+        'content',
+        'video_url',
+        'is_published',
+    ];
+
+    protected $casts = [
+        'is_published' => 'boolean',
     ];
 
     public function course(): BelongsTo

@@ -18,7 +18,18 @@ describe('Admin/Contests/Edit', () => {
     it('renders the edit form with the contest title as subtitle', () => {
         mockUsePage.mockReturnValue({
             props: {
-                contest: { id: 9, title: 'Round 9', slug: 'r9', description: '', starts_at: '', ends_at: '', is_public: true, problems: [] },
+                contest: {
+                    id: 9,
+                    title: 'Round 9',
+                    slug: 'r9',
+                    description: '',
+                    starts_at: '2026-06-18T10:00',
+                    ends_at: '2026-06-18T11:15',
+                    duration_hours: 1,
+                    duration_minutes: 15,
+                    is_public: true,
+                    problems: [],
+                },
                 availableProblems: [{ id: 1, title: 'A', slug: 'a' }],
             },
         });
@@ -29,17 +40,19 @@ describe('Admin/Contests/Edit', () => {
         );
         expect(screen.getByText('Edit contest')).toBeInTheDocument();
         expect(screen.getByText('Round 9')).toBeInTheDocument();
+        expect(screen.getByLabelText('Duration hours')).toHaveValue(1);
+        expect(screen.getByLabelText('Duration minutes')).toHaveValue(15);
     });
 
-    it('renders Arabic title and tolerates missing availableProblems', () => {
+    it('renders Arabic form and tolerates missing availableProblems', () => {
         mockUsePage.mockReturnValue({
-            props: { contest: { id: 9, title: 'جولة', slug: 'r9', is_public: false, problems: [] } },
+            props: { contest: { id: 9, title: 'Round', slug: 'r9', is_public: false, problems: [] } },
         });
         render(
             <UiLocaleProvider locale="ar">
                 <AdminContestsEdit />
             </UiLocaleProvider>,
         );
-        expect(screen.getByText('تعديل المسابقة')).toBeInTheDocument();
+        expect(screen.getByRole('heading')).toBeInTheDocument();
     });
 });

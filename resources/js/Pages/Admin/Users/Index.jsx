@@ -3,6 +3,8 @@ import { useForm, usePage } from '@inertiajs/react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { useUiLocale } from '@/lib/ui-locale';
 import AdminLayout from '../AdminLayout';
 
@@ -53,31 +55,31 @@ export default function AdminUsersIndex() {
                 </Alert>
             ) : null}
 
-            <div className="app-surface-muted overflow-hidden rounded-[28px]">
+            <Card className="overflow-hidden bg-slate-950/55">
                 {rows.length === 0 ? (
-                    <p className="p-6 text-sm text-[var(--app-muted)]">{t.empty}</p>
+                    <CardContent className="p-6">
+                        <p className="text-sm text-[var(--app-muted)]">{t.empty}</p>
+                    </CardContent>
                 ) : (
-                    <div className="overflow-x-auto">
-                        <table className="w-full min-w-[780px] text-start text-sm">
-                            <thead className="border-b border-[var(--app-border)] text-xs text-[var(--app-muted)]">
-                                <tr>
-                                    <th className="px-5 py-4 text-start font-medium">{t.user}</th>
-                                    <th className="px-5 py-4 text-start font-medium">{t.role}</th>
-                                    <th className="px-5 py-4 text-start font-medium">{t.sessions}</th>
-                                    <th className="px-5 py-4 text-start font-medium">{t.aiSolves}</th>
-                                    <th className="px-5 py-4 text-start font-medium">{t.submissions}</th>
-                                    <th className="px-5 py-4 text-end font-medium">{t.action}</th>
-                                </tr>
-                            </thead>
-                            <tbody className="divide-y divide-[var(--app-border)]">
-                                {rows.map((user) => (
-                                    <UserRow key={user.id} user={user} t={t} />
-                                ))}
-                            </tbody>
-                        </table>
-                    </div>
+                    <Table className="min-w-[780px]">
+                        <TableHeader>
+                            <TableRow className="hover:bg-transparent">
+                                <TableHead>{t.user}</TableHead>
+                                <TableHead>{t.role}</TableHead>
+                                <TableHead>{t.sessions}</TableHead>
+                                <TableHead>{t.aiSolves}</TableHead>
+                                <TableHead>{t.submissions}</TableHead>
+                                <TableHead className="text-end">{t.action}</TableHead>
+                            </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                            {rows.map((user) => (
+                                <UserRow key={user.id} user={user} t={t} />
+                            ))}
+                        </TableBody>
+                    </Table>
                 )}
-            </div>
+            </Card>
         </AdminLayout>
     );
 }
@@ -86,22 +88,22 @@ function UserRow({ user, t }) {
     const form = useForm({ is_admin: !user.is_admin });
 
     return (
-        <tr className="text-[var(--app-foreground)]">
-            <td className="px-5 py-4">
+        <TableRow>
+            <TableCell>
                 <p className="font-medium">{user.name}</p>
                 <p className="mt-1 text-xs text-[var(--app-muted)]">{user.email}</p>
-            </td>
-            <td className="px-5 py-4">
+            </TableCell>
+            <TableCell>
                 <Badge variant={user.is_admin ? 'success' : 'subtle'}>{user.is_admin ? t.admin : t.member}</Badge>
-            </td>
-            <td className="px-5 py-4">{user.algorithm_sessions_count}</td>
-            <td className="px-5 py-4">{user.codeforces_solutions_count}</td>
-            <td className="px-5 py-4">{user.submissions_count}</td>
-            <td className="px-5 py-4 text-end">
+            </TableCell>
+            <TableCell>{user.algorithm_sessions_count}</TableCell>
+            <TableCell>{user.codeforces_solutions_count}</TableCell>
+            <TableCell>{user.submissions_count}</TableCell>
+            <TableCell className="text-end">
                 <Button type="button" variant="surface" size="sm" disabled={form.processing} onClick={() => form.put(`/admin/users/${user.id}`)}>
                     {user.is_admin ? t.removeAdmin : t.makeAdmin}
                 </Button>
-            </td>
-        </tr>
+            </TableCell>
+        </TableRow>
     );
 }

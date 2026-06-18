@@ -1,5 +1,6 @@
 import MotionReveal from '@/components/landing/MotionReveal';
 import { Badge } from '@/components/ui/badge';
+import { Card } from '@/components/ui/card';
 import { useUiLocale } from '@/lib/ui-locale';
 
 export default function TrustSection() {
@@ -28,10 +29,10 @@ export default function TrustSection() {
                 </h2>
                 <div className="mt-8 grid gap-4 sm:grid-cols-3">
                     {points.map((p) => (
-                        <div key={p.title} className="rounded-[24px] border border-white/8 bg-white/[0.03] p-5">
+                        <Card key={p.title} className="rounded-[24px] border-white/8 bg-white/[0.03] p-5">
                             <p className="text-sm font-semibold text-white">{p.title}</p>
                             <p className="mt-3 text-sm leading-6 text-slate-300">{p.body}</p>
-                        </div>
+                        </Card>
                     ))}
                 </div>
             </MotionReveal>

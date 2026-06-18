@@ -7,6 +7,7 @@ use App\Models\Submission;
 use App\Modules\Arena\Models\Contest;
 use App\Modules\Arena\Models\ContestParticipant;
 use App\Modules\Arena\Services\StandingService;
+use App\Modules\Problems\Models\Problem;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -29,8 +30,8 @@ class ArenaController extends Controller
                 'description' => $c->description,
                 'status' => $c->status(),
                 'problems_count' => $c->problems_count,
-                'starts_at' => $c->starts_at?->toIso8601String(),
-                'ends_at' => $c->ends_at?->toIso8601String(),
+                'starts_at' => $this->isoInAppTimezone($c->starts_at),
+                'ends_at' => $this->isoInAppTimezone($c->ends_at),
             ])
             ->all();
 
@@ -45,6 +46,10 @@ class ArenaController extends Controller
 
         $contest->load('problems');
         $userId = $request->user()->id;
+        $isAdmin = (bool) $request->user()?->is_admin;
+        $joined = $contest->hasParticipant($userId);
+        $canSeeContestProblemNames = $isAdmin || $joined;
+        $canOpenContestProblems = $isAdmin || ($joined && $contest->allowsProblemViewing());
 
         // Best per-problem status for the current user within this contest.
         $statusByProblem = Submission::query()
@@ -59,28 +64,64 @@ class ArenaController extends Controller
                 return $accepted ? 'accepted' : ($group->last()->verdict ?? null);
             });
 
-        $problems = $contest->problems->map(fn ($problem) => [
-            'id' => $problem->id,
-            'label' => $problem->pivot->label,
-            'title' => $problem->title,
-            'slug' => $problem->slug,
-            'difficulty' => $problem->difficulty,
-            'your_status' => $statusByProblem->get($problem->id),
-        ])->all();
+        $problems = $contest->problems
+            ->filter(fn ($problem) => $problem->isPubliclyVisible() || $canSeeContestProblemNames)
+            ->map(fn ($problem) => [
+                'id' => $problem->id,
+                'label' => $problem->pivot->label,
+                'title' => $problem->title,
+                'slug' => $problem->slug,
+                'difficulty' => null,
+                'can_open' => $canOpenContestProblems,
+                'your_status' => $statusByProblem->get($problem->id),
+            ])->values()->all();
 
         return Inertia::render('Arena/Show', [
             'contest' => [
+                'id' => $contest->id,
                 'slug' => $contest->slug,
                 'title' => $contest->title,
                 'description' => $contest->description,
                 'status' => $contest->status(),
                 'is_practice' => $contest->is_practice,
                 'accepts_submissions' => $contest->acceptsSubmissions(),
-                'starts_at' => $contest->starts_at?->toIso8601String(),
-                'ends_at' => $contest->ends_at?->toIso8601String(),
+                'starts_at' => $this->isoInAppTimezone($contest->starts_at),
+                'ends_at' => $this->isoInAppTimezone($contest->ends_at),
             ],
-            'joined' => $contest->hasParticipant($userId),
+            'joined' => $joined,
             'problems' => $problems,
+        ]);
+    }
+
+    public function problem(Request $request, Contest $contest, Problem $problem): Response
+    {
+        abort_unless($contest->is_public || $request->user()?->is_admin, 404);
+        abort_unless($contest->hasProblem((int) $problem->id), 404);
+
+        $isAdmin = (bool) $request->user()?->is_admin;
+        if (! $isAdmin) {
+            abort_unless($contest->hasParticipant((int) $request->user()->id), 403);
+            abort_unless($contest->allowsProblemViewing(), 403);
+        }
+
+        $problem->load('tags');
+
+        return Inertia::render('Problems/Show', [
+            'problem' => [
+                'id' => $problem->id,
+                'title' => $problem->title,
+                'slug' => $problem->slug,
+                'statement' => $problem->statement,
+                'difficulty' => $problem->difficulty,
+                'time_limit_ms' => $problem->time_limit_ms,
+                'memory_limit_mb' => $problem->memory_limit_mb,
+                'tags' => $problem->tags->map(fn ($t) => ['id' => $t->id, 'name' => $t->name])->all(),
+            ],
+            'contest' => [
+                'id' => $contest->id,
+                'slug' => $contest->slug,
+                'title' => $contest->title,
+            ],
         ]);
     }
 
@@ -91,7 +132,7 @@ class ArenaController extends Controller
         // Idempotent: joining twice does not create a duplicate participant.
         ContestParticipant::query()->firstOrCreate(
             ['contest_id' => $contest->id, 'user_id' => $request->user()->id],
-            ['registered_at' => now()],
+            ['registered_at' => now(config('app.timezone'))],
         );
 
         return redirect()->back()->with('message', 'تم انضمامك إلى المسابقة.');
@@ -128,5 +169,10 @@ class ArenaController extends Controller
             'labels' => $labels,
             'rows' => $rows,
         ]);
+    }
+
+    private function isoInAppTimezone(?\Carbon\CarbonInterface $date): ?string
+    {
+        return $date?->timezone(config('app.timezone'))->toIso8601String();
     }
 }

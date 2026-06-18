@@ -188,7 +188,7 @@ export function getStatusMeta(status: StreamStatus, locale: UiLocale = 'ar') {
 }
 
 export function getSidebarPrimaryItems(locale: UiLocale = 'ar') {
-    return [
+    const items = [
         { id: 'assistant', label: locale === 'ar' ? 'المساعد' : 'Assistant', href: '/assistant', icon: BrainCircuit, available: true },
         { id: 'solve', label: 'Codeforces', href: '/solve', icon: PlayCircle, available: true },
         { id: 'patterns', label: locale === 'ar' ? 'الموضوعات' : 'Topics', href: '/patterns', icon: Lightbulb, available: true },
@@ -197,6 +197,10 @@ export function getSidebarPrimaryItems(locale: UiLocale = 'ar') {
         { id: 'courses', label: locale === 'ar' ? 'المسارات' : 'Courses', href: '/courses', icon: CircleHelp, available: true },
         { id: 'submissions', label: locale === 'ar' ? 'الإرسالات' : 'Submissions', href: '/submissions', icon: MessageSquareQuote, available: true },
     ];
+
+    const order = ['problems', 'arena', 'assistant', 'solve', 'patterns', 'courses', 'submissions'];
+
+    return order.map((id) => items.find((item) => item.id === id)!);
 }
 
 export function formatLanguageLabel(language: string, locale: UiLocale = 'ar') {

@@ -7,6 +7,7 @@ import TranscriptComposer from '@/components/assistant/TranscriptComposer';
 import WorkspaceHeader from '@/components/assistant/WorkspaceHeader';
 import ScreenContextPanel from '@/components/context/ScreenContextPanel';
 import AppLayout from '@/components/layout/AppLayout';
+import { Card } from '@/components/ui/card';
 import { getStatusMeta, type AssistantMode, type StreamStatus, type ThreadMessage, type WorkspaceEvent } from '@/lib/assistant-workspace';
 import { useUiLocale } from '@/lib/ui-locale';
 
@@ -93,7 +94,7 @@ export default function AssistantWorkspace({
                                 <QuickModesBar selectedMode={mode} onModeChange={onModeChange} disabled={isBusy} />
                             </div>
                             <div className="hidden shrink-0 items-stretch gap-2 lg:flex 2xl:items-center">
-                                <div className="rounded-[22px] border border-[var(--app-border)] bg-slate-950/45 px-4 py-3">
+                                <Card className="rounded-[22px] px-4 py-3">
                                     <div className="flex items-center gap-2 text-xs font-medium text-[var(--app-muted)]">
                                         <MonitorCog className="h-4 w-4" />
                                         {locale === 'ar' ? 'آخر دورة' : 'Last run'}
@@ -103,15 +104,15 @@ export default function AssistantWorkspace({
                                             ? (locale === 'ar' ? `طلب #${currentRequestMessageId}` : `Request #${currentRequestMessageId}`)
                                             : (locale === 'ar' ? 'لم تبدأ بعد' : 'Not started yet')}
                                     </p>
-                                </div>
-                                <div className="rounded-[22px] border border-[var(--app-border)] bg-slate-950/45 px-4 py-3">
+                                </Card>
+                                <Card className="rounded-[22px] px-4 py-3">
                                     <div className="flex items-center gap-2 text-xs font-medium text-[var(--app-muted)]">
                                         <RefreshCw className="h-4 w-4" />
                                         {locale === 'ar' ? 'حالة التشغيل' : 'Runtime status'}
                                     </div>
                                     <p className="mt-2 text-sm font-semibold text-[var(--app-foreground)]">{statusMeta.label}</p>
-                                </div>
-                                <div className="rounded-[22px] border border-[var(--app-border)] bg-slate-950/45 px-4 py-3">
+                                </Card>
+                                <Card className="rounded-[22px] px-4 py-3">
                                     <div className="flex items-center gap-2 text-xs font-medium text-[var(--app-muted)]">
                                         <Siren className="h-4 w-4" />
                                         {locale === 'ar' ? 'البث' : 'Transport'}
@@ -119,7 +120,7 @@ export default function AssistantWorkspace({
                                     <p className="mt-2 text-sm font-semibold text-[var(--app-foreground)]">
                                         {isUsingPolling ? (locale === 'ar' ? 'استطلاع احتياطي' : 'Polling fallback') : (locale === 'ar' ? 'لحظي' : 'Realtime')}
                                     </p>
-                                </div>
+                                </Card>
                             </div>
                         </div>
                     </div>

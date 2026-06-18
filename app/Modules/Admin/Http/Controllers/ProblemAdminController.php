@@ -5,6 +5,7 @@ namespace App\Modules\Admin\Http\Controllers;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\StoreProblemRequest;
 use App\Http\Requests\Admin\UpdateProblemRequest;
+use App\Models\Tag;
 use App\Modules\Problems\Models\Problem;
 use Illuminate\Http\RedirectResponse;
 use Inertia\Inertia;
@@ -15,8 +16,9 @@ class ProblemAdminController extends Controller
     public function index(): Response
     {
         $problems = Problem::query()
+            ->with('tags')
             ->orderBy('title')
-            ->paginate(50, ['id', 'title', 'slug', 'difficulty', 'created_at']);
+            ->paginate(50, ['id', 'title', 'slug', 'difficulty', 'is_public', 'published_at', 'published_from_contest_id', 'created_at']);
 
         return Inertia::render('Admin/Problems/Index', [
             'problems' => $problems,
@@ -30,7 +32,9 @@ class ProblemAdminController extends Controller
     {
         $this->authorize('create', Problem::class);
 
-        return Inertia::render('Admin/Problems/Create');
+        return Inertia::render('Admin/Problems/Create', [
+            'tags' => $this->availableTags(),
+        ]);
     }
 
     public function store(StoreProblemRequest $request): RedirectResponse
@@ -38,8 +42,13 @@ class ProblemAdminController extends Controller
         $this->authorize('create', Problem::class);
 
         $validated = $request->validated();
-        $problem = Problem::query()->create($this->problemAttributes($validated));
+        $problem = Problem::query()->create([
+            ...$this->problemAttributes($validated),
+            'is_public' => true,
+            'published_at' => now(),
+        ]);
         $this->syncTestCases($problem, $validated['test_cases'] ?? []);
+        $problem->tags()->sync($validated['tag_ids'] ?? []);
 
         return redirect()->route('admin.problems.index')->with('message', 'Problem created.');
     }
@@ -48,7 +57,7 @@ class ProblemAdminController extends Controller
     {
         $this->authorize('update', $problem);
 
-        $problem->load('testCases');
+        $problem->load(['testCases', 'tags']);
 
         return Inertia::render('Admin/Problems/Edit', [
             'problem' => [
@@ -57,14 +66,19 @@ class ProblemAdminController extends Controller
                 'slug' => $problem->slug,
                 'statement' => $problem->statement,
                 'difficulty' => $problem->difficulty,
+                'is_public' => (bool) $problem->is_public,
+                'published_at' => $problem->published_at?->toIso8601String(),
+                'published_from_contest_id' => $problem->published_from_contest_id,
                 'time_limit_ms' => $problem->time_limit_ms,
                 'memory_limit_mb' => $problem->memory_limit_mb,
+                'tag_ids' => $problem->tags->pluck('id')->all(),
                 'test_cases' => $problem->testCases->map(fn ($tc) => [
                     'input' => $tc->input,
                     'expected_output' => $tc->expected_output,
                     'is_sample' => (bool) $tc->is_sample,
                 ])->all(),
             ],
+            'tags' => $this->availableTags(),
         ]);
     }
 
@@ -75,6 +89,7 @@ class ProblemAdminController extends Controller
         $validated = $request->validated();
         $problem->update($this->problemAttributes($validated));
         $this->syncTestCases($problem, $validated['test_cases'] ?? []);
+        $problem->tags()->sync($validated['tag_ids'] ?? []);
 
         return redirect()->route('admin.problems.index')->with('message', 'Problem updated.');
     }
@@ -126,5 +141,21 @@ class ProblemAdminController extends Controller
                 'is_sample' => (bool) ($case['is_sample'] ?? false),
             ]);
         }
+    }
+
+    /**
+     * @return array<int, array{id: int, name: string, slug: string}>
+     */
+    private function availableTags(): array
+    {
+        return Tag::query()
+            ->orderBy('name')
+            ->get(['id', 'name', 'slug'])
+            ->map(fn (Tag $tag) => [
+                'id' => $tag->id,
+                'name' => $tag->name,
+                'slug' => $tag->slug,
+            ])
+            ->all();
     }
 }

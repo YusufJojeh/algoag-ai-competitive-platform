@@ -22,7 +22,7 @@ class AuthenticationTest extends TestCase
         $response->assertRedirect(route('login'));
     }
 
-    public function test_user_can_register_and_reach_onboarding(): void
+    public function test_user_can_register_and_reach_problems(): void
     {
         $response = $this->post('/register', [
             'name' => 'New User',
@@ -31,7 +31,7 @@ class AuthenticationTest extends TestCase
             'password_confirmation' => 'password123',
         ]);
 
-        $response->assertRedirect(route('onboarding'));
+        $response->assertRedirect(route('problems.index'));
         $this->assertAuthenticated();
     }
 
@@ -46,7 +46,14 @@ class AuthenticationTest extends TestCase
             'password' => 'password',
         ]);
 
-        $response->assertRedirect(route('home'));
+        $response->assertRedirect(route('problems.index'));
         $this->assertAuthenticatedAs($user);
+    }
+
+    public function test_authenticated_home_redirects_to_problems(): void
+    {
+        $user = User::factory()->create();
+
+        $this->actingAs($user)->get(route('home'))->assertRedirect('/problems');
     }
 }

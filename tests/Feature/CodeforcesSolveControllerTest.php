@@ -99,6 +99,7 @@ class CodeforcesSolveControllerTest extends TestCase
         $solution = CodeforcesSolution::query()->latest()->first();
         $this->assertNotNull($solution);
         $this->assertSame($this->user->id, $solution->user_id);
+        $this->assertSame('cpp', $solution->solution_language);
         $this->assertSame('en', $solution->response_language);
         $this->assertSame(CodeforcesSolution::STATUS_PENDING, $solution->status);
 
@@ -176,6 +177,30 @@ class CodeforcesSolveControllerTest extends TestCase
         $response->assertRedirect();
         $solution = CodeforcesSolution::query()->latest()->first();
         $this->assertSame('python', $solution->solution_language);
+    }
+
+    public function test_solve_post_defaults_to_python_language(): void
+    {
+        Queue::fake();
+        Http::fake(['*/api/tags' => Http::response([], 200)]);
+
+        $response = $this->post('/solve', [
+            'problem' => 'Given n numbers, print their sum.',
+        ]);
+
+        $response->assertRedirect();
+        $solution = CodeforcesSolution::query()->latest()->first();
+        $this->assertSame('python', $solution->solution_language);
+    }
+
+    public function test_solve_post_rejects_unsupported_language(): void
+    {
+        $response = $this->post('/solve', [
+            'problem' => 'Given n numbers, print their sum.',
+            'language' => 'javascript',
+        ]);
+
+        $response->assertSessionHasErrors('language');
     }
 
     public function test_result_status_returns_json_for_owner(): void

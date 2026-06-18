@@ -16,18 +16,28 @@ class CodeforcesPromptsTest extends TestCase
         $this->assertStringContainsString('examples', $prompt);
     }
 
-    public function test_generate_solution_returns_cpp_by_default(): void
+    public function test_generate_solution_returns_python_by_default(): void
+    {
+        $prompt = CodeforcesPrompts::generateSolution();
+        $this->assertNotEmpty($prompt);
+        $this->assertStringContainsString('Python 3', $prompt);
+        $this->assertStringContainsString('clear input parsing', $prompt);
+    }
+
+    public function test_generate_solution_returns_cpp17_when_requested(): void
     {
         $prompt = CodeforcesPrompts::generateSolution('cpp');
         $this->assertNotEmpty($prompt);
-        $this->assertStringContainsString('C++', $prompt);
+        $this->assertStringContainsString('C++17', $prompt);
+        $this->assertStringContainsString('ios::sync_with_stdio(false);', $prompt);
+        $this->assertStringContainsString('cin.tie(nullptr);', $prompt);
     }
 
     public function test_generate_solution_returns_python_when_requested(): void
     {
         $prompt = CodeforcesPrompts::generateSolution('python');
         $this->assertNotEmpty($prompt);
-        $this->assertStringContainsString('Python', $prompt);
+        $this->assertStringContainsString('Python 3', $prompt);
         $this->assertStringContainsString('sparse dictionaries/maps of reachable gcd states', $prompt);
     }
 
@@ -57,6 +67,15 @@ class CodeforcesPromptsTest extends TestCase
         $this->assertStringContainsString('IN ENGLISH', $prompt);
         $this->assertStringContainsString('current page UI language is English', $prompt);
         $this->assertStringContainsString('Ignore the language of the pasted problem statement', $prompt);
+    }
+
+    public function test_generate_explanation_mentions_selected_solution_language(): void
+    {
+        $cppPrompt = CodeforcesPrompts::generateExplanation('en', 'cpp');
+        $pythonPrompt = CodeforcesPrompts::generateExplanation('en', 'python');
+
+        $this->assertStringContainsString('C++17', $cppPrompt);
+        $this->assertStringContainsString('Python 3', $pythonPrompt);
     }
 
     public function test_generate_tests_returns_non_empty_string(): void

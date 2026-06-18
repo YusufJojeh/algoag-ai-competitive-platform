@@ -129,6 +129,24 @@ class ContestSubmissionGateTest extends TestCase
         Queue::assertPushed(ProcessSubmissionJob::class);
     }
 
+    public function test_normal_non_contest_submission_still_accepts_cpp(): void
+    {
+        $user = User::factory()->create();
+        $problem = Problem::factory()->create();
+
+        $this->actingAs($user)->post('/submissions', [
+            'problem_id' => $problem->id,
+            'language' => 'cpp',
+            'code' => '#include <bits/stdc++.h>\nint main(){return 0;}',
+        ])->assertRedirect();
+
+        $this->assertDatabaseHas('submissions', [
+            'problem_id' => $problem->id,
+            'language' => 'cpp',
+        ]);
+        Queue::assertPushed(ProcessSubmissionJob::class);
+    }
+
     public function test_joining_a_contest_is_idempotent(): void
     {
         $user = User::factory()->create();

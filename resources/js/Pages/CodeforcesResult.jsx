@@ -3,8 +3,10 @@ import { Link, router, usePage } from '@inertiajs/react';
 import { Check, Copy } from 'lucide-react';
 
 import AppLayout from '@/components/layout/AppLayout';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useUiLocale } from '@/lib/ui-locale';
 
 const TABS = [
@@ -212,28 +214,33 @@ export default function CodeforcesResult() {
         >
             <div className="mx-auto max-w-5xl" dir={isRtl ? 'rtl' : 'ltr'}>
                 {isProcessing && (
-                    <div className="mb-6 rounded-[26px] border border-sky-500/30 bg-sky-500/10 p-4 text-sm text-sky-200">
-                        <strong>{text.processingLead}</strong> {stageLabel(pollStage ?? solution?.progress_stage, locale)}. {text.processingTail}
-                    </div>
+                    <Alert className="mb-6 border-sky-500/30 bg-sky-500/10 text-sky-200">
+                        <AlertDescription className="text-sky-200">
+                            <strong>{text.processingLead}</strong> {stageLabel(pollStage ?? solution?.progress_stage, locale)}. {text.processingTail}
+                        </AlertDescription>
+                    </Alert>
                 )}
 
                 {isFailed && solution?.error_message && (
-                    <div className="mb-6 rounded-[26px] border border-red-500/30 bg-red-500/10 p-4 text-sm text-red-200">
-                        <strong>{text.failedLead}</strong> {solution.error_message}
-                    </div>
+                    <Alert className="mb-6 border-red-500/30 bg-red-500/10 text-red-200">
+                        <AlertDescription className="text-red-200">
+                            <strong>{text.failedLead}</strong> {solution.error_message}
+                        </AlertDescription>
+                    </Alert>
                 )}
 
                 {(solution?.status === 'completed' || solution?.status === 'failed' || (isProcessing && solution?.problem_text)) && (
                     <div className="mb-6 flex flex-wrap gap-2 border-b border-[var(--app-border)] pb-4">
                         {TABS.map((tab) => (
-                            <button
+                            <Button
                                 key={tab.id}
                                 type="button"
+                                variant={activeTab === tab.id ? 'soft' : 'surface'}
+                                size="sm"
                                 onClick={() => setActiveTab(tab.id)}
-                                className={`rounded-2xl px-4 py-2 text-sm font-medium transition ${activeTab === tab.id ? 'bg-cyan-400/12 text-cyan-200' : 'bg-slate-950/45 text-slate-300 hover:bg-white/6'}`}
                             >
                                 {tab.label[locale]}
-                            </button>
+                            </Button>
                         ))}
                     </div>
                 )}
@@ -243,9 +250,11 @@ export default function CodeforcesResult() {
                         <h2 className="text-slate-300 font-medium">{text.parsedProblem}</h2>
                         {parsed.title && <p className="font-medium text-cyan-200">{parsed.title}</p>}
                         {parsed.description && (
-                            <div className="rounded-[26px] border border-[var(--app-border)] bg-slate-950/45 p-4">
-                                <p className="text-slate-200 whitespace-pre-wrap">{parsed.description}</p>
-                            </div>
+                            <Card>
+                                <CardContent className="p-4">
+                                    <p className="text-slate-200 whitespace-pre-wrap">{parsed.description}</p>
+                                </CardContent>
+                            </Card>
                         )}
                         {parsed.input_format && (
                             <div>
@@ -270,21 +279,25 @@ export default function CodeforcesResult() {
                                 <span className="text-slate-400 text-sm font-medium">{text.examples}</span>
                                 <ul className="mt-2 space-y-3">
                                     {parsed.examples.map((ex, i) => (
-                                        <li key={i} className="rounded-[24px] border border-[var(--app-border)] bg-slate-950/45 p-3">
-                                            <span className="text-slate-500 text-xs">{text.input}</span>
-                                            <pre className="text-slate-200 text-sm whitespace-pre-wrap font-mono mt-0.5">{ex.input}</pre>
-                                            <span className="text-slate-500 text-xs mt-2 block">{text.output}</span>
-                                            <pre className="text-slate-200 text-sm whitespace-pre-wrap font-mono mt-0.5">{ex.output}</pre>
+                                        <li key={i}>
+                                            <Card className="p-3">
+                                                <span className="text-slate-500 text-xs">{text.input}</span>
+                                                <pre className="text-slate-200 text-sm whitespace-pre-wrap font-mono mt-0.5">{ex.input}</pre>
+                                                <span className="text-slate-500 text-xs mt-2 block">{text.output}</span>
+                                                <pre className="text-slate-200 text-sm whitespace-pre-wrap font-mono mt-0.5">{ex.output}</pre>
+                                            </Card>
                                         </li>
                                     ))}
                                 </ul>
                             </div>
                         )}
                         {!parsed.title && !parsed.description && (
-                            <div className="rounded-[24px] border border-[var(--app-border)] bg-slate-950/45 p-4">
-                                <p className="text-slate-400 text-sm">{text.rawProblem}</p>
-                                <p className="text-slate-200 whitespace-pre-wrap mt-2">{problemText}</p>
-                            </div>
+                            <Card>
+                                <CardContent className="p-4">
+                                    <p className="text-slate-400 text-sm">{text.rawProblem}</p>
+                                    <p className="text-slate-200 whitespace-pre-wrap mt-2">{problemText}</p>
+                                </CardContent>
+                            </Card>
                         )}
                     </section>
                 )}
@@ -320,12 +333,16 @@ export default function CodeforcesResult() {
                 )}
 
                 {activeTab === 'explanation' && (
-                    <section>
-                        <h2 className="text-slate-300 font-medium mb-2">{text.explanation}</h2>
-                        <div className="rounded-[28px] border border-[var(--app-border)] bg-slate-950/45 p-5">
-                            <p className="text-slate-200 whitespace-pre-wrap leading-relaxed">{explanation || text.empty}</p>
-                        </div>
-                    </section>
+                    <Card>
+                        <section>
+                            <CardHeader>
+                                <CardTitle>{text.explanation}</CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                                <p className="text-slate-200 whitespace-pre-wrap leading-relaxed">{explanation || text.empty}</p>
+                            </CardContent>
+                        </section>
+                    </Card>
                 )}
 
                 {activeTab === 'judge' && (
@@ -333,17 +350,19 @@ export default function CodeforcesResult() {
                         <h2 className="text-slate-300 font-medium mb-2">{text.judgeTitle}</h2>
                         <p className="text-slate-500 text-sm mb-3">{text.judgeNote}</p>
                         {solution?.run_results?.message && (
-                            <div className="rounded-[24px] border border-[var(--app-border)] bg-slate-950/45 p-4 text-sm text-slate-200">
-                                {solution.run_results.message}
-                            </div>
+                            <Alert className="bg-slate-950/45 text-slate-200">
+                                <AlertDescription className="text-slate-200">{solution.run_results.message}</AlertDescription>
+                            </Alert>
                         )}
                         {solution?.run_results?.test_cases?.length > 0 && (
                             <ul className="space-y-2">
                                 {solution.run_results.test_cases.map((c) => (
-                                    <li key={c.index} className="rounded-[24px] border border-[var(--app-border)] bg-slate-950/45 p-3 text-sm">
-                                        <span className="text-slate-400">{text.test} #{c.index + 1}</span>
-                                        <span className="block text-amber-300 mt-1">{c.verdict}</span>
-                                        {c.note && <p className="text-slate-400 mt-1">{c.note}</p>}
+                                    <li key={c.index}>
+                                        <Card className="p-3 text-sm">
+                                            <span className="text-slate-400">{text.test} #{c.index + 1}</span>
+                                            <span className="block text-amber-300 mt-1">{c.verdict}</span>
+                                            {c.note && <p className="text-slate-400 mt-1">{c.note}</p>}
+                                        </Card>
                                     </li>
                                 ))}
                             </ul>
@@ -361,7 +380,8 @@ export default function CodeforcesResult() {
                         ) : (
                             <div className="space-y-4">
                                 {tests.map((t, i) => (
-                                    <div key={i} className="rounded-[24px] border border-[var(--app-border)] bg-slate-950/45 p-4">
+                                    <Card key={i}>
+                                        <CardContent className="p-4">
                                         <span className="text-slate-500 text-xs">{text.test} #{i + 1}</span>
                                         <div className="mt-2">
                                             <span className="text-slate-400 text-xs">{text.input}</span>
@@ -371,7 +391,8 @@ export default function CodeforcesResult() {
                                             <span className="text-slate-400 text-xs">{text.expectedOutput}</span>
                                             <pre className="mt-0.5 rounded-[18px] bg-slate-950/70 p-2 text-sm text-slate-200 whitespace-pre-wrap font-mono">{t.expected_output}</pre>
                                         </div>
-                                    </div>
+                                        </CardContent>
+                                    </Card>
                                 ))}
                             </div>
                         )}
@@ -379,12 +400,16 @@ export default function CodeforcesResult() {
                 )}
 
                 {activeTab === 'algorithm' && (
-                    <section>
-                        <h2 className="text-slate-300 font-medium mb-2">{text.algorithm}</h2>
-                        <div className="rounded-[28px] border border-[var(--app-border)] bg-slate-950/45 p-5">
-                            <p className="text-slate-200 whitespace-pre-wrap leading-relaxed">{algorithmBreakdown || text.empty}</p>
-                        </div>
-                    </section>
+                    <Card>
+                        <section>
+                            <CardHeader>
+                                <CardTitle>{text.algorithm}</CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                                <p className="text-slate-200 whitespace-pre-wrap leading-relaxed">{algorithmBreakdown || text.empty}</p>
+                            </CardContent>
+                        </section>
+                    </Card>
                 )}
 
                 <div className="mt-8 border-t border-[var(--app-border)] pt-6">

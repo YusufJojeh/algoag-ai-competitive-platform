@@ -59,9 +59,9 @@ Reply ONLY with valid JSON, no markdown or commentary.
 PROMPT;
     }
 
-    public static function generateSolution(string $language = 'cpp'): string
+    public static function generateSolution(string $language = 'python'): string
     {
-        $lang = $language === 'python' ? 'Python 3' : 'C++';
+        $lang = $language === 'cpp' ? 'C++17' : 'Python 3';
 
         return <<<PROMPT
 You are an expert competitive programmer (Codeforces grandmaster level). Given a parsed problem (JSON), write a COMPLETE, correct, ready-to-submit solution in {$lang}.
@@ -69,7 +69,10 @@ You are an expert competitive programmer (Codeforces grandmaster level). Given a
 First reason silently about the right approach BEFORE writing code (do NOT include this reasoning in the output):
 - Read the constraints (n, value ranges, time/memory limits) and let them pick the technique and target complexity. Examples: n up to ~10^6 → O(n) or O(n log n); n up to ~5000 → O(n^2) may pass; n up to ~20 → bitmask/meet-in-the-middle; tree/array range queries → segment tree / Fenwick / sparse table; reachability/shortest path/matching → graph algorithms (BFS/DFS/Dijkstra/DSU); counting/optimization over states → dynamic programming; divisibility/primes/modular → number theory; monotonic answer → binary search on the answer.
 - Pick the standard algorithm/data structure for the detected category and make sure its complexity fits the limits (avoid TLE) and memory fits (avoid MLE).
-- For Python on GCD subset/array DP problems, avoid dense loops over every possible value for every element when constraints are tight. Prefer sparse dictionaries/maps of reachable gcd states, because the number of distinct gcd states is usually small; dense value DP that passes in C++ may TLE in Python.
+- For Python 3: use clear input parsing from stdin, avoid unnecessary libraries, and keep the final code directly executable. On GCD subset/array DP problems, avoid dense loops over every possible value for every element when constraints are tight. Prefer sparse dictionaries/maps of reachable gcd states, because the number of distinct gcd states is usually small; dense value DP that passes in C++ may TLE in Python.
+- For C++17: use standard competitive-programming style with #include <bits/stdc++.h>, using namespace std, and fast I/O in main:
+  ios::sync_with_stdio(false);
+  cin.tie(nullptr);
 
 Hard requirements (the code is compiled and run as-is):
 - Output the FULL program: every needed #include / import, all helper functions/data structures, and a complete main/entry point. No placeholders, no "// TODO", no "...", no omitted sections, no truncation.
@@ -80,9 +83,9 @@ Hard requirements (the code is compiled and run as-is):
 PROMPT;
     }
 
-    public static function repairSolution(string $language = 'cpp'): string
+    public static function repairSolution(string $language = 'python'): string
     {
-        $lang = $language === 'python' ? 'Python 3' : 'C++';
+        $lang = $language === 'cpp' ? 'C++17' : 'Python 3';
 
         return <<<PROMPT
 You are an expert competitive programmer. Your previous {$lang} solution FAILED an official sample test (it was actually compiled and run). Below are the problem, your previous solution, and the exact failing case including its VERDICT and what your program produced.
@@ -99,12 +102,15 @@ Hard requirements:
 PROMPT;
     }
 
-    public static function generateExplanation(string $responseLanguage = 'ar'): string
+    public static function generateExplanation(string $responseLanguage = 'ar', string $solutionLanguage = 'python'): string
     {
+        $languageInstruction = self::solutionLanguageInstruction($solutionLanguage);
+
         if ($responseLanguage === 'en') {
-            return <<<'PROMPT'
+            return <<<PROMPT
 You are an expert competitive-programming coach. Given the problem (parsed JSON) and the solution code, write a detailed explanation IN ENGLISH because the current page UI language is English.
 Ignore the language of the pasted problem statement when choosing the response language.
+The solution code is {$languageInstruction}; explain implementation details using that language's conventions.
 Include:
 1. Main idea: 1-2 sentences
 2. Why it works: correctness reasoning
@@ -136,12 +142,15 @@ Generate at least 5 and at most 15 test cases. Reply ONLY with the JSON array, n
 PROMPT;
     }
 
-    public static function generateAlgorithmBreakdown(string $responseLanguage = 'ar'): string
+    public static function generateAlgorithmBreakdown(string $responseLanguage = 'ar', string $solutionLanguage = 'python'): string
     {
+        $languageInstruction = self::solutionLanguageInstruction($solutionLanguage);
+
         if ($responseLanguage === 'en') {
-            return <<<'PROMPT'
+            return <<<PROMPT
 You are an expert algorithms and competitive-programming coach. Given the problem and its solution, write a short structured explanation IN ENGLISH because the current page UI language is English.
 Ignore the language of the pasted problem statement when choosing the response language.
+The solution code is {$languageInstruction}; keep language-specific notes consistent with it.
 Include:
 1. Algorithm or technique name
 2. Analysis: brief mathematical or logical reasoning
@@ -166,5 +175,10 @@ You are an expert Arabic coach in algorithms and competitive programming. Given 
 Write in clear Arabic. Use short paragraphs or bullet-style. No code.
 أخرج نصًا عاديًا فقط: بدون عناوين Markdown (# أو ## أو ###)، وبدون رموز LaTeX مثل \( \) أو $...$.
 PROMPT;
+    }
+
+    private static function solutionLanguageInstruction(string $solutionLanguage): string
+    {
+        return $solutionLanguage === 'cpp' ? 'C++17' : 'Python 3';
     }
 }

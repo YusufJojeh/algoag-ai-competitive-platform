@@ -13,6 +13,8 @@ use App\Http\Controllers\OnboardingController;
 use App\Http\Controllers\SubmissionController;
 use App\Modules\Admin\Http\Controllers\AdminDashboardController;
 use App\Modules\Admin\Http\Controllers\AdminSettingsController;
+use App\Modules\Admin\Http\Controllers\AdminCourseController;
+use App\Modules\Admin\Http\Controllers\AdminTopicController;
 use App\Modules\Admin\Http\Controllers\AdminUserController;
 use App\Modules\Admin\Http\Controllers\ProblemAdminController;
 use App\Modules\Arena\Http\Controllers\ArenaController;
@@ -67,7 +69,7 @@ Route::middleware('guest')->group(function () use ($guestLoginPostMiddleware, $g
 Route::middleware($authGroupMiddleware)->group(function () use ($mutationActionMiddleware, $assistantActionMiddleware, $readActionMiddleware) {
     Route::post('/logout', [AuthenticatedSessionController::class, 'destroy'])->name('logout');
 
-    Route::redirect('/dashboard', '/assistant')->name('home');
+    Route::redirect('/dashboard', '/problems')->name('home');
     Route::get('/onboarding', [OnboardingController::class, 'index'])->name('onboarding');
 
     Route::middleware($mutationActionMiddleware)->group(function () {
@@ -81,10 +83,12 @@ Route::middleware($authGroupMiddleware)->group(function () use ($mutationActionM
 
     Route::middleware(['admin', 'throttle:120,1'])->prefix('admin')->name('admin.')->group(function () {
         Route::get('/', AdminDashboardController::class)->name('dashboard');
-        Route::get('/settings', AdminSettingsController::class)->name('settings');
         Route::resource('users', AdminUserController::class)->only(['index', 'update']);
+        Route::resource('topics', AdminTopicController::class)->except(['show']);
+        Route::resource('courses', AdminCourseController::class)->except(['show']);
         Route::resource('problems', ProblemAdminController::class)->except(['show']);
         Route::resource('contests', ContestAdminController::class)->except(['show']);
+        Route::get('/settings', AdminSettingsController::class)->name('settings');
     });
 
     Route::middleware($assistantActionMiddleware)->prefix('assistant')->name('assistant.')->group(function () {
@@ -109,6 +113,7 @@ Route::middleware($authGroupMiddleware)->group(function () use ($mutationActionM
         Route::get('/submissions', [SubmissionController::class, 'index'])->name('submissions.index');
         Route::get('/submissions/{submission}', [SubmissionController::class, 'show'])->name('submissions.show');
         Route::get('/arena', [ArenaController::class, 'index'])->name('arena.index');
+        Route::get('/arena/{contest}/problems/{problem}', [ArenaController::class, 'problem'])->name('arena.problems.show');
         Route::get('/arena/{contest}', [ArenaController::class, 'show'])->name('arena.show');
         Route::get('/arena/{contest}/standings', [ArenaController::class, 'standings'])->name('arena.standings');
     });

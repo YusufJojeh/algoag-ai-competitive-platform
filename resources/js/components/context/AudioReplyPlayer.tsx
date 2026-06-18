@@ -23,17 +23,21 @@ export default function AudioReplyPlayer({ src, text, compact = false, autoPlay 
     const [currentTime, setCurrentTime] = useState(0);
     const [error, setError] = useState(false);
 
-    // Auto-play the spoken reply as soon as its URL arrives.
     useEffect(() => {
-        if (autoPlay && src && audioRef.current) {
+        if (!autoPlay || !src || !audioRef.current) {
+            return;
+        }
+
+        try {
             const playPromise = audioRef.current.play();
             playPromise?.catch?.(() => {
                 // Autoplay can be blocked by the browser; the manual button still works.
             });
+        } catch {
+            setError(true);
         }
     }, [autoPlay, src]);
 
-    // No server audio: speak the reply once with the browser's speech engine.
     useEffect(() => {
         if (autoPlay && !src && text && tts.isSupported && autoSpokenTextRef.current !== text) {
             autoSpokenTextRef.current = text;
@@ -90,6 +94,7 @@ export default function AudioReplyPlayer({ src, text, compact = false, autoPlay 
                 </div>
             );
         }
+
         return (
             <div className="rounded-[24px] border border-dashed border-[var(--app-border)] bg-slate-950/45 p-4 text-sm text-[var(--app-muted)]">
                 {locale === 'ar' ? 'الرد الصوتي غير جاهز بعد.' : 'The audio reply is not ready yet.'}
@@ -136,7 +141,7 @@ export default function AudioReplyPlayer({ src, text, compact = false, autoPlay 
                 </Button>
             </div>
 
-            <div className="mt-4 space-y-2">
+            <div className="mt-4 flex flex-col gap-2">
                 <Progress value={progress} />
                 <div className="flex items-center justify-between text-xs text-[var(--app-muted)]">
                     <span>{currentTime.toFixed(0)}ث</span>

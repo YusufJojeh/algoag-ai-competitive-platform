@@ -4,6 +4,7 @@ import { BrainCircuit, CheckCircle2, MonitorPlay, Sparkles, Waves } from 'lucide
 import { getLoginVisualState, type LoginVisualScenario } from '@/lib/e2e-visual';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -95,19 +96,20 @@ export default function Login() {
                                 </p>
                             </div>
 
-                        <div className="rounded-[32px] border border-[var(--app-border)] bg-slate-950/72 p-6 shadow-[0_24px_80px_rgba(2,6,23,0.42)] sm:p-8">
-                                <div className="mb-8">
+                            <Card className="rounded-[32px] bg-slate-950/72 shadow-[0_24px_80px_rgba(2,6,23,0.42)]">
+                                <CardHeader className="p-6 pb-4 sm:p-8 sm:pb-4">
                                     <p className="text-sm font-semibold text-cyan-200">{locale === 'ar' ? 'مرحباً بعودتك' : 'Welcome back'}</p>
-                                    <h2 className="mt-2 text-2xl font-semibold text-[var(--app-foreground)]">
+                                    <CardTitle className="mt-2 text-2xl">
                                         {locale === 'ar' ? 'ادخل إلى بيئة التحليل التفاعلية' : 'Enter the interactive analysis environment'}
-                                    </h2>
-                                    <p className="mt-3 text-sm leading-6 text-[var(--app-muted)]">
+                                    </CardTitle>
+                                    <CardDescription>
                                         {locale === 'ar'
                                             ? 'سجّل الدخول للوصول إلى المساعد، الجلسات، وسياق التحليل الحي الخاص بك.'
                                             : 'Sign in to access the assistant, your sessions, and the live analysis context.'}
-                                    </p>
-                                </div>
+                                    </CardDescription>
+                                </CardHeader>
 
+                                <CardContent className="p-6 pt-2 sm:p-8 sm:pt-2">
                                 <form
                                     className="space-y-5"
                                     onSubmit={(event) => {
@@ -174,7 +176,8 @@ export default function Login() {
                                         {locale === 'ar' ? 'أنشئ حساباً جديداً' : 'Create a new account'}
                                     </Link>
                                 </p>
-                            </div>
+                                </CardContent>
+                            </Card>
                         </div>
                     </section>
                 </div>
@@ -191,7 +194,7 @@ type FeatureRowProps = {
 
 function FeatureRow({ icon: Icon, title, description }: FeatureRowProps) {
     return (
-        <div className="rounded-[28px] border border-[var(--app-border)] bg-slate-950/45 p-5 shadow-sm">
+        <Card className="p-5">
             <div className="flex items-start gap-4">
                 <div className="flex h-12 w-12 items-center justify-center rounded-[18px] bg-[var(--app-accent-soft)] text-[var(--app-accent-strong)]">
                     <Icon className="h-5 w-5" />
@@ -201,6 +204,6 @@ function FeatureRow({ icon: Icon, title, description }: FeatureRowProps) {
                     <p className="mt-2 text-sm leading-6 text-[var(--app-muted)]">{description}</p>
                 </div>
             </div>
-        </div>
+        </Card>
     );
 }

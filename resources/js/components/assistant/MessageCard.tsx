@@ -2,6 +2,7 @@ import { Bot, UserRound } from 'lucide-react';
 
 import AudioReplyPlayer from '@/components/context/AudioReplyPlayer';
 import { Badge } from '@/components/ui/badge';
+import { Card } from '@/components/ui/card';
 import { getModeMeta, type ThreadMessage } from '@/lib/assistant-workspace';
 import { useUiLocale } from '@/lib/ui-locale';
 
@@ -16,7 +17,7 @@ export default function MessageCard({ message, streaming = false }: MessageCardP
     const isAssistant = message.role === 'assistant';
 
     return (
-        <article
+        <Card
             className={[
                 'rounded-[30px] border px-5 py-4 shadow-sm transition',
                 isAssistant
@@ -24,6 +25,7 @@ export default function MessageCard({ message, streaming = false }: MessageCardP
                     : 'border-[var(--app-border)] bg-slate-900/70',
             ].join(' ')}
         >
+        <article>
             <div className="mb-3 flex items-center justify-between gap-3">
                 <div className="flex items-center gap-3">
                     <div
@@ -54,5 +56,6 @@ export default function MessageCard({ message, streaming = false }: MessageCardP
                 {message.audioUrl && <AudioReplyPlayer src={message.audioUrl} compact />}
             </div>
         </article>
+        </Card>
     );
 }

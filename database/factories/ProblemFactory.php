@@ -24,6 +24,16 @@ class ProblemFactory extends Factory
             'difficulty' => $this->faker->randomElement(['easy', 'medium', 'hard']),
             'time_limit_ms' => 1000,
             'memory_limit_mb' => 256,
+            'is_public' => true,
+            'published_at' => now(),
         ];
+    }
+
+    public function contestOnly(): static
+    {
+        return $this->state(fn () => [
+            'is_public' => false,
+            'published_at' => null,
+        ]);
     }
 }

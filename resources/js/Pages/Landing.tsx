@@ -27,11 +27,17 @@ type LandingPageProps = {
     e2e?: {
         disable3D?: boolean;
     };
+    topics?: Array<{
+        id: number;
+        name: string;
+        slug: string;
+        problems_count: number;
+    }>;
 };
 
 export default function Landing() {
     const page = usePage<LandingPageProps>();
-    const { auth, e2e } = page.props;
+    const { auth, e2e, topics = [] } = page.props;
     const { locale, isRtl } = useUiLocale();
     const isAuthenticated = Boolean(auth?.user);
     const disable3D = Boolean(e2e?.disable3D);
@@ -108,6 +114,36 @@ export default function Landing() {
 
                     <main className="relative z-10">
                         <HeroSection isAuthenticated={isAuthenticated} disable3D={disable3D} />
+                        <section id="topics" className="px-4 py-16 sm:px-6 lg:px-8">
+                            <div className="mx-auto max-w-7xl">
+                                <div className="max-w-3xl">
+                                    <p className="text-sm font-semibold uppercase tracking-[0.24em] text-cyan-200">
+                                        {locale === 'ar' ? 'الموضوعات' : 'Topics'}
+                                    </p>
+                                    <h2 className="mt-3 text-3xl font-semibold text-white">
+                                        {locale === 'ar' ? 'موضوعات الإدارة تظهر للطلاب مباشرة' : 'Admin topics feed the public problem flow'}
+                                    </h2>
+                                </div>
+                                {topics.length > 0 ? (
+                                    <div className="mt-8 flex flex-wrap gap-3">
+                                        {topics.map((topic) => (
+                                            <Link
+                                                key={topic.id}
+                                                href={`/problems?topic=${topic.slug}`}
+                                                className="rounded-2xl border border-white/10 bg-white/6 px-4 py-3 text-sm text-slate-200 transition hover:border-cyan-300/40 hover:bg-cyan-400/10"
+                                            >
+                                                <span className="font-medium">{topic.name}</span>
+                                                <span className="ms-2 text-slate-400">({topic.problems_count})</span>
+                                            </Link>
+                                        ))}
+                                    </div>
+                                ) : (
+                                    <p className="mt-6 text-sm text-slate-400">
+                                        {locale === 'ar' ? 'لا توجد موضوعات منشأة من الإدارة بعد.' : 'No admin topics have been created yet.'}
+                                    </p>
+                                )}
+                            </div>
+                        </section>
                         <ArenaOverview />
                         <FeatureGrid />
                         <HowItWorksTimeline />

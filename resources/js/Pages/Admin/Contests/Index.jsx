@@ -4,6 +4,8 @@ import { Plus } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { useUiLocale } from '@/lib/ui-locale';
 import AdminLayout from '../AdminLayout';
 
@@ -19,6 +21,9 @@ const copy = {
         visibility: 'Visibility',
         public: 'Public',
         private: 'Private',
+        practice: 'Practice',
+        published: 'Problems published',
+        pendingPublish: 'Hidden until contest ends',
         actions: 'Actions',
         edit: 'Edit',
         delete: 'Delete',
@@ -31,12 +36,15 @@ const copy = {
         subtitle: (count) => `${count} مسابقة.`,
         newContest: 'مسابقة جديدة',
         createContest: 'إنشاء مسابقة',
-        empty: 'لا توجد مسابقات بعد. أنشئ الأولى.',
+        empty: 'لا توجد مسابقات بعد. أنشئ المسابقة الأولى.',
         tableTitle: 'العنوان',
-        slug: 'المعرف',
+        slug: 'المعرّف',
         visibility: 'الظهور',
-        public: 'عامة',
-        private: 'خاصة',
+        public: 'عام',
+        private: 'خاص',
+        practice: 'تدريب',
+        published: 'نُشرت المسائل',
+        pendingPublish: 'مخفية حتى نهاية المسابقة',
         actions: 'الإجراءات',
         edit: 'تعديل',
         delete: 'حذف',
@@ -57,14 +65,14 @@ export default function AdminContestsIndex() {
         <AdminLayout
             title={t.title}
             subtitle={t.subtitle(count)}
-            actions={
+            actions={(
                 <Button asChild>
                     <Link href="/admin/contests/create">
                         <Plus data-icon="inline-start" />
                         {t.newContest}
                     </Link>
                 </Button>
-            }
+            )}
         >
             {flash?.message ? (
                 <Alert className="mb-5 border-emerald-400/20 bg-emerald-400/10">
@@ -72,37 +80,35 @@ export default function AdminContestsIndex() {
                 </Alert>
             ) : null}
 
-            <div className="app-surface-muted overflow-hidden rounded-[28px]">
+            <Card className="overflow-hidden bg-slate-950/55">
                 {rows.length === 0 ? (
-                    <div className="flex flex-col items-start gap-4 p-8">
+                    <CardContent className="flex flex-col items-start gap-4 p-8">
                         <p className="text-sm text-[var(--app-muted)]">{t.empty}</p>
                         <Button asChild>
                             <Link href="/admin/contests/create">{t.createContest}</Link>
                         </Button>
-                    </div>
+                    </CardContent>
                 ) : (
                     <>
-                        <div className="overflow-x-auto">
-                            <table className="w-full min-w-[680px] text-start text-sm">
-                                <thead className="border-b border-[var(--app-border)] text-xs text-[var(--app-muted)]">
-                                    <tr>
-                                        <th className="px-5 py-4 text-start font-medium">{t.tableTitle}</th>
-                                        <th className="px-5 py-4 text-start font-medium">{t.slug}</th>
-                                        <th className="px-5 py-4 text-start font-medium">{t.visibility}</th>
-                                        <th className="px-5 py-4 text-end font-medium">{t.actions}</th>
-                                    </tr>
-                                </thead>
-                                <tbody className="divide-y divide-[var(--app-border)]">
-                                    {rows.map((contest) => (
-                                        <ContestRow key={contest.id} contest={contest} t={t} />
-                                    ))}
-                                </tbody>
-                            </table>
-                        </div>
+                        <Table className="min-w-[680px]">
+                            <TableHeader>
+                                <TableRow className="hover:bg-transparent">
+                                    <TableHead>{t.tableTitle}</TableHead>
+                                    <TableHead>{t.slug}</TableHead>
+                                    <TableHead>{t.visibility}</TableHead>
+                                    <TableHead className="text-end">{t.actions}</TableHead>
+                                </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                                {rows.map((contest) => (
+                                    <ContestRow key={contest.id} contest={contest} t={t} />
+                                ))}
+                            </TableBody>
+                        </Table>
                         <Pagination links={contests.links ?? []} t={t} />
                     </>
                 )}
-            </div>
+            </Card>
         </AdminLayout>
     );
 }
@@ -111,16 +117,20 @@ function ContestRow({ contest, t }) {
     const deleteForm = useForm({});
 
     return (
-        <tr className="text-[var(--app-foreground)]">
-            <td className="px-5 py-4 font-medium">{contest.title}</td>
-            <td className="px-5 py-4 font-mono text-xs text-[var(--app-muted)]">{contest.slug}</td>
-            <td className="px-5 py-4">
-                <Badge variant={contest.is_public ? 'success' : 'muted'}>{contest.is_public ? t.public : t.private}</Badge>
-            </td>
-            <td className="px-5 py-4">
+        <TableRow>
+            <TableCell className="font-medium">{contest.title}</TableCell>
+            <TableCell className="font-mono text-xs text-[var(--app-muted)]">{contest.slug}</TableCell>
+            <TableCell>
+                <div className="flex flex-wrap gap-2">
+                    <Badge variant={contest.is_public ? 'success' : 'muted'}>{contest.is_public ? t.public : t.private}</Badge>
+                    {contest.is_practice ? <Badge variant="violet">{t.practice}</Badge> : null}
+                    {contest.problems_published_at ? <Badge variant="success">{t.published}</Badge> : <Badge variant="muted">{t.pendingPublish}</Badge>}
+                </div>
+            </TableCell>
+            <TableCell>
                 <div className="flex justify-end gap-2">
                     <Button asChild variant="surface" size="sm">
-                        <Link href={`/admin/contests/${contest.id}/edit`}>{t.edit}</Link>
+                        <Link href={`/admin/contests/${contest.slug}/edit`}>{t.edit}</Link>
                     </Button>
                     <Button
                         type="button"
@@ -129,15 +139,15 @@ function ContestRow({ contest, t }) {
                         disabled={deleteForm.processing}
                         onClick={() => {
                             if (confirm(t.confirmDelete)) {
-                                deleteForm.delete(`/admin/contests/${contest.id}`);
+                                deleteForm.delete(`/admin/contests/${contest.slug}`);
                             }
                         }}
                     >
                         {t.delete}
                     </Button>
                 </div>
-            </td>
-        </tr>
+            </TableCell>
+        </TableRow>
     );
 }
 

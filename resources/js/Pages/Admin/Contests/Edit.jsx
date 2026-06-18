@@ -18,11 +18,11 @@ const copy = {
 export default function AdminContestsEdit() {
     const { locale } = useUiLocale();
     const t = copy[locale];
-    const { contest, availableProblems = [] } = usePage().props;
+    const { contest, availableProblems = [], scheduling = {} } = usePage().props;
 
     return (
         <AdminLayout title={t.title} subtitle={contest.title}>
-            <ContestForm initialData={contest} availableProblems={availableProblems} submitLabel={t.submit} method="put" action={`/admin/contests/${contest.id}`} />
+            <ContestForm initialData={contest} availableProblems={availableProblems} scheduling={scheduling} submitLabel={t.submit} method="put" action={`/admin/contests/${contest.slug}`} />
         </AdminLayout>
     );
 }

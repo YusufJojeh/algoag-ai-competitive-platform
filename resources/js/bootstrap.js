@@ -12,11 +12,19 @@ if (reverbKey) {
     window.Echo = new Echo({
         broadcaster: 'reverb',
         key: reverbKey,
-        wsHost: import.meta.env.VITE_REVERB_HOST,
+        wsHost: import.meta.env.VITE_REVERB_HOST ?? '127.0.0.1',
         wsPort: import.meta.env.VITE_REVERB_PORT ?? 80,
         wssPort: import.meta.env.VITE_REVERB_PORT ?? 443,
         forceTLS: (import.meta.env.VITE_REVERB_SCHEME ?? 'https') === 'https',
         enabledTransports: ['ws', 'wss'],
         disableStats: true,
+    });
+
+    window.Echo.connector?.pusher?.connection?.bind('error', () => {
+        window.dispatchEvent(new CustomEvent('algoag:realtime-disconnected'));
+    });
+
+    window.Echo.connector?.pusher?.connection?.bind('unavailable', () => {
+        window.dispatchEvent(new CustomEvent('algoag:realtime-disconnected'));
     });
 }

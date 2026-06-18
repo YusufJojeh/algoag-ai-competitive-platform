@@ -1,121 +1,209 @@
-# مساعد تصميم الخوارزميات مع محاكاة الأداء
+# ALGOAG
 
-نظام يساعدك على اختيار النهج الخوارزمي الأنسب: **يفهم المسألة → يقترح خوارزميات → يجرّبها → يقارنها → ينصحك بأفضل حل**. يتضمن أيضاً **حلّال نصوص مسائل أسلوب Codeforces** (عبر Ollama في الخلفية)، و**بنك مسائل ومسارات وإرسالات** (واجهة أساسية مع حكم تجريبي بدون تنفيذ معزول).
+ALGOAG is a Laravel 12 + React/Inertia competitive programming platform for learning, solving, contests, and AI-assisted algorithm practice.
 
-## التقنيات
+## Overview
 
-- **Backend:** Laravel 12  
-- **Frontend:** React + Inertia.js  
-- **AI:** Ollama (محلي)
-- **مصادقة:** جلسات Laravel (تسجيل / دخول / خروج)
-- **طوابير:** دعم `QUEUE_CONNECTION=database` لمعالجة حل Codeforces في الخلفية
+ALGOAG is built around a problems-first workflow: learners open public problems, submit Python or C++ solutions, review verdicts, join Mini Codeforces-style Arena contests, and use AI-assisted tools for algorithm reasoning and Codeforces-style problem solving. Admin users manage users, topics, courses, lessons, problems, hidden tests, contests, contest-only problems, and settings.
 
-## المتطلبات
+The local judge is intended for development and demo use. It can run Python and C++ locally when enabled, but production use requires a real sandbox such as Docker, gVisor, or Firejail.
 
-- PHP 8.2+
-- Composer
-- Node.js 18+
-- [Ollama](https://ollama.ai) مثبّت ويعمل محلياً
+## Main Features
 
-## التثبيت
+- Public problem bank with topics/tags and difficulty labels.
+- Python and C++ submissions with hidden test cases.
+- Local demo judge with a safe stub mode by default.
+- Mini Codeforces-style Arena with timed and practice contests.
+- Contest start/duration scheduling with computed `ends_at`.
+- Contest-only private problems hidden until contest end.
+- Scheduled publishing of ended contest-only problems to public Problems.
+- Computed post-contest difficulty based on participant performance.
+- ICPC-style standings.
+- AI assistant with text, vision, speech-to-text, and text-to-speech integrations.
+- Codeforces solver workflow supporting Python and C++ only.
+- Admin management for users, topics, courses, lessons, problems, contests, and settings.
+- Laravel Reverb/Echo support with frontend polling fallbacks where implemented.
+- Queue and scheduler support for long-running AI and publishing tasks.
+
+## Tech Stack
+
+- Backend: Laravel 12, PHP 8.2+
+- Frontend: React 18, Inertia.js, Vite, Tailwind CSS, Shadcn-style local UI components
+- Realtime: Laravel Reverb, Echo, Pusher protocol
+- Database: MySQL for normal local usage; SQLite is used by tests
+- Queue: Laravel queue, normally `database` locally
+- Testing: PHPUnit, Vitest, TypeScript compile check
+- AI: OpenAI primary provider, Ollama fallback for some text-generation flows
+- Judge: local Python/C++ process judge for demo/dev, stub judge by default
+
+## Local Setup
 
 ```bash
-# 1. تثبيت حزم PHP
 composer install
-
-# 2. نسخ البيئة وتوليد المفتاح
+npm install
 copy .env.example .env
 php artisan key:generate
-
-# 3. قاعدة البيانات والبيانات الأولية (مسائل/مسارات/مستخدم تجريبي)
 php artisan migrate
 php artisan db:seed
-
-# 4. تثبيت حزم الواجهة
-npm install
-
-# 5. بناء الواجهة (أو استخدم npm run dev أثناء التطوير)
 npm run build
 ```
 
-**مستخدم تجريبي (بعد seed):** البريد `demo@example.com` وكلمة المرور `password`.
+Use stable local addresses, especially when a VPN is enabled:
 
-## تشغيل Ollama
-
-```bash
-ollama serve
-ollama pull llama3.2
+```env
+APP_URL=http://127.0.0.1:8000
+VITE_DEV_SERVER_HOST=127.0.0.1
+VITE_HMR_HOST=127.0.0.1
+REVERB_HOST=127.0.0.1
+REVERB_SERVER_HOST=127.0.0.1
 ```
 
-(يمكن تغيير النموذج عبر `OLLAMA_MODEL` في `.env`.)
+## Environment Variables
 
-## تشغيل التطبيق
+Important values from `.env.example`:
+
+```env
+APP_URL=http://127.0.0.1:8000
+APP_TIMEZONE=Asia/Damascus
+DB_CONNECTION=mysql
+QUEUE_CONNECTION=database
+BROADCAST_CONNECTION=reverb
+JUDGE_USE_REAL=false
+JUDGE_TIME_LIMIT_SECONDS=10
+```
+
+AI values are intentionally blank in `.env.example`. Do not commit real keys.
+
+```env
+OPENAI_API_KEY=
+AI_PRIMARY_PROVIDER=openai
+AI_OPENAI_MODEL=gpt-4o
+ASSISTANT_AI_MODEL=gpt-4o-mini
+```
+
+## Running The App
+
+Terminal 1:
 
 ```bash
-# طرفية 1: الخادم
-php artisan serve
+php artisan serve --host=127.0.0.1 --port=8000
+```
 
-# طرفية 2 (أثناء التطوير): Vite
+Terminal 2:
+
+```bash
 npm run dev
 ```
 
-ثم افتح: [http://localhost:8000](http://localhost:8000) — ستُوجَّه لتسجيل الدخول إن لم تكن مسجّلاً.
-
-## طابور المهام (حل Codeforces)
-
-- افتراضياً في `.env.example`: `QUEUE_CONNECTION=sync` (تنفيذ بعد إرسال الاستجابة في نفس العملية).
-- للإنتاج أو لتفريغ طلبات HTTP بسرعة: عيّن `QUEUE_CONNECTION=database`، نفّذ `php artisan migrate` (جدول `jobs`)، وشغّل:
+Terminal 3, if using database queue:
 
 ```bash
 php artisan queue:work
 ```
 
-## سير العمل
-
-1. **تسجيل الدخول أو إنشاء حساب** — الجلسات وحلول Codeforces مرتبطة بالمستخدم.
-2. **الصفحة الرئيسية:** اكتب وصف المسألة ثم **اقترح خوارزميات** (Ollama).
-3. **محاكاة الأداء:** تشغيل مقاييس PHP محلية ومقارنة النتائج.
-4. **التوصية:** Ollama يلخّص التوصية؛ تُحفظ الجلسة في `algorithm_sessions`.
-5. **حل Codeforces:** من الرابط في الرأس — لصق نص المسألة؛ تُصفّ الطلبات في **Job** وتُحدَّث الصفحة تلقائياً عند الانتهاء.
-6. **بنك المسائل / المسارات / إرسالاتي:** روابط في الرأس؛ الإرسال يُسجَّل مع **حكم تجريبي** (لا تنفيذ كود معزول).
-
-## قاعدة البيانات (SQLite)
-
-- جداول رئيسية: `users`, `algorithm_sessions`, `codeforces_solutions`, `jobs` (للطابور)، `tags`, `problems`, `problem_tag`, `courses`, `lessons`, `submissions`.
-- ملف SQLite: `database/database.sqlite`
-
-## الاختبارات
-
-### Backend (PHPUnit)
+Terminal 4, for scheduled tasks:
 
 ```bash
+php artisan schedule:work
+```
+
+Optional Reverb:
+
+```bash
+php artisan reverb:start --host=127.0.0.1
+```
+
+## Scheduler And Publishing
+
+The scheduler runs:
+
+- `assistant:cleanup` hourly.
+- `ai:mark-stale-jobs` every five minutes.
+- `arena:publish-ended-problems` every ten minutes with `withoutOverlapping()`.
+
+Manual publishing command:
+
+```bash
+php artisan arena:publish-ended-problems
+```
+
+## Local Judge Setup
+
+The safe default is:
+
+```env
+JUDGE_USE_REAL=false
+```
+
+In this mode submissions are recorded with the stub judge and no user code is executed. For local demos on a trusted machine:
+
+```env
+JUDGE_USE_REAL=true
+```
+
+Requirements:
+
+- Python available as `python` or `python3`.
+- C++ compiler available as `g++` or `c++`.
+
+Windows g++ options include MSYS2/MinGW-w64. After installation, ensure `g++.exe` is on PATH and verify:
+
+```bash
+g++ --version
+php artisan test tests/Feature/LocalProcessJudgeTest.php
+```
+
+Security warning: do not run untrusted code in production without a real sandbox. Supported sandbox driver names are documented in config as `docker`, `gvisor`, and `firejail`, but the production isolation itself must be implemented and operated before claiming production judge safety.
+
+## Demo Accounts
+
+After `php artisan db:seed`:
+
+- Admin: `admin@example.com` / `password`
+- Demo user: `demo@example.com` / `password`
+- Student: `student@example.com` / `password`
+
+## Demo Flow
+
+1. Open `http://127.0.0.1:8000`.
+2. Log in as `demo@example.com`.
+3. Open Problems and submit a Python or C++ solution.
+4. Join an Arena contest and review the countdown/running/ended states.
+5. Open standings.
+6. Log in as admin and create a topic, course lesson, problem, and contest.
+7. Add a contest-only problem, end the contest, run `php artisan arena:publish-ended-problems`, and confirm the problem appears publicly.
+8. Try the AI assistant and Codeforces solver.
+
+## Testing
+
+```bash
+php artisan optimize:clear
+php artisan route:list
+php artisan schedule:list
 php artisan test
-```
-
-### Frontend (Vitest)
-
-```bash
 npm run test
+npm run build
+npm run lint
 ```
 
-### الكل
+For a safe migration smoke test without touching local MySQL:
 
 ```bash
-npm run test:all
+$env:APP_ENV='testing'; $env:DB_CONNECTION='sqlite'; $env:DB_DATABASE=':memory:'; php artisan migrate --force
+$env:APP_ENV='testing'; $env:DB_CONNECTION='sqlite'; $env:DB_DATABASE=':memory:'; php artisan migrate:fresh --seed --force
 ```
 
-## الإعدادات (`.env`)
+## Screenshots
 
-| المتغير | الوصف |
-|--------|--------|
-| `OLLAMA_URL` | عنوان Ollama (افتراضي: http://localhost:11434) |
-| `OLLAMA_MODEL` | اسم النموذج (افتراضي: llama3.2) |
-| `QUEUE_CONNECTION` | `sync` أو `database` (مع `php artisan queue:work`) |
+Add final screenshots under a separate portfolio folder or release assets:
 
-## رفع المشروع إلى GitHub
+- Landing
+- Problems list and problem show
+- Submission result
+- Arena and standings
+- Admin users/topics/courses/problems/contests
+- AI assistant and Codeforces solver
 
-انظر [GITHUB.md](GITHUB.md).
+## Status And License
 
-## ترخيص
-
-MIT
+Portfolio/graduation-ready local demo project. License: MIT, as declared in `composer.json`.

@@ -28,7 +28,38 @@ class Problem extends Model
         'difficulty',
         'time_limit_ms',
         'memory_limit_mb',
+        'is_public',
+        'published_at',
+        'published_from_contest_id',
     ];
+
+    protected $casts = [
+        'is_public' => 'boolean',
+        'published_at' => 'datetime',
+    ];
+
+    public function scopePublic($query)
+    {
+        return $query
+            ->where('is_public', true)
+            ->whereNotNull('published_at')
+            ->where('published_at', '<=', now());
+    }
+
+    public function scopeUnpublishedContestOnly($query)
+    {
+        return $query
+            ->where('is_public', false)
+            ->whereNull('published_at')
+            ->whereNotNull('published_from_contest_id');
+    }
+
+    public function isPubliclyVisible(): bool
+    {
+        return $this->is_public === true
+            && $this->published_at !== null
+            && $this->published_at->lte(now());
+    }
 
     public function tags(): BelongsToMany
     {

@@ -18,11 +18,11 @@ const copy = {
 export default function AdminProblemsEdit() {
     const { locale } = useUiLocale();
     const t = copy[locale];
-    const { problem } = usePage().props;
+    const { problem, tags = [] } = usePage().props;
 
     return (
         <AdminLayout title={t.title} subtitle={problem.title}>
-            <ProblemForm initialData={problem} submitLabel={t.submit} method="put" action={`/admin/problems/${problem.id}`} />
+            <ProblemForm initialData={problem} availableTags={tags} submitLabel={t.submit} method="put" action={`/admin/problems/${problem.id}`} />
         </AdminLayout>
     );
 }

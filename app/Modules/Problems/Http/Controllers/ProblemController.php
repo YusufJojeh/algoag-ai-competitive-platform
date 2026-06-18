@@ -3,6 +3,7 @@
 namespace App\Modules\Problems\Http\Controllers;
 
 use App\Http\Controllers\Controller;
+use App\Models\Tag;
 use App\Modules\Problems\Models\Problem;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -14,8 +15,15 @@ class ProblemController extends Controller
     {
         $this->authorize('viewAny', Problem::class);
 
+        $topicSlug = $request->query('topic');
+        $topic = is_string($topicSlug) && $topicSlug !== ''
+            ? Tag::query()->where('slug', $topicSlug)->first()
+            : null;
+
         $problems = Problem::query()
+            ->public()
             ->with('tags')
+            ->when($topic, fn ($query) => $query->whereHas('tags', fn ($tagQuery) => $tagQuery->whereKey($topic->id)))
             ->orderBy('title')
             ->get()
             ->map(fn (Problem $p) => [
@@ -23,12 +31,17 @@ class ProblemController extends Controller
                 'title' => $p->title,
                 'slug' => $p->slug,
                 'difficulty' => $p->difficulty,
+                'time_label' => $p->published_at ? 'published' : 'created',
+                'time_at' => ($p->published_at ?? $p->created_at)?->toIso8601String(),
                 'tags' => $p->tags->map(fn ($t) => ['id' => $t->id, 'name' => $t->name])->all(),
             ])
             ->all();
 
         return Inertia::render('Problems/Index', [
             'problems' => $problems,
+            'filters' => [
+                'topic' => $topic ? ['id' => $topic->id, 'name' => $topic->name, 'slug' => $topic->slug] : null,
+            ],
         ]);
     }
 

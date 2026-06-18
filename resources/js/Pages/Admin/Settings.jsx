@@ -1,6 +1,7 @@
 import { usePage } from '@inertiajs/react';
 
 import { Badge } from '@/components/ui/badge';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { useUiLocale } from '@/lib/ui-locale';
 import AdminLayout from './AdminLayout';
@@ -78,34 +79,38 @@ export default function AdminSettings() {
                 </Panel>
             </section>
 
-            <section className="app-surface-muted mt-6 rounded-[28px]">
-                <div className="px-5 py-4">
-                    <h2 className="text-sm font-semibold text-[var(--app-foreground)]">{t.services}</h2>
-                </div>
+            <Card className="mt-6 overflow-hidden bg-slate-950/55">
+                <CardHeader className="px-5 py-4">
+                    <CardTitle className="text-sm">{t.services}</CardTitle>
+                </CardHeader>
                 <Separator />
-                <div className="flex flex-col">
-                    {services.map((service) => (
-                        <div key={service.name} className="grid gap-3 border-b border-[var(--app-border)] px-5 py-4 last:border-b-0 md:grid-cols-[1fr_auto_1fr] md:items-center">
-                            <p className="font-medium text-[var(--app-foreground)]">{service.name}</p>
-                            <StatusBadge status={service.status} />
-                            <p className="text-sm text-[var(--app-muted)] md:text-end">{service.detail}</p>
-                        </div>
-                    ))}
-                </div>
-            </section>
+                <CardContent className="p-0">
+                    <div className="flex flex-col">
+                        {services.map((service) => (
+                            <div key={service.name} className="grid gap-3 border-b border-[var(--app-border)] px-5 py-4 last:border-b-0 md:grid-cols-[1fr_auto_1fr] md:items-center">
+                                <p className="font-medium text-[var(--app-foreground)]">{service.name}</p>
+                                <StatusBadge status={service.status} />
+                                <p className="text-sm text-[var(--app-muted)] md:text-end">{service.detail}</p>
+                            </div>
+                        ))}
+                    </div>
+                </CardContent>
+            </Card>
         </AdminLayout>
     );
 }
 
 function Panel({ title, children }) {
     return (
-        <div className="app-surface-muted rounded-[28px]">
-            <div className="px-5 py-4">
-                <h2 className="text-sm font-semibold text-[var(--app-foreground)]">{title}</h2>
-            </div>
+        <Card className="overflow-hidden bg-slate-950/55">
+            <CardHeader className="px-5 py-4">
+                <CardTitle className="text-sm">{title}</CardTitle>
+            </CardHeader>
             <Separator />
-            <div className="flex flex-col">{children}</div>
-        </div>
+            <CardContent className="p-0">
+                <div className="flex flex-col">{children}</div>
+            </CardContent>
+        </Card>
     );
 }
 

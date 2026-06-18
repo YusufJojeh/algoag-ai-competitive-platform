@@ -82,7 +82,7 @@ class CodeforcesSolverService
             $solution->save();
 
             $problemText = $solution->problem_text;
-            $language = $solution->solution_language ?: 'cpp';
+            $language = $solution->solution_language === 'cpp' ? 'cpp' : 'python';
             $responseLanguage = $solution->response_language === 'en' ? 'en' : 'ar';
 
             $parsedProblem = $this->parseProblem($problemText);
@@ -123,7 +123,7 @@ class CodeforcesSolverService
             $solution->save();
 
             $explanations = $this->generateTextTranslations(
-                fn (string $locale) => $this->generateExplanation($parsedJson, $solution->solution_code, $locale)
+                fn (string $locale) => $this->generateExplanation($parsedJson, $solution->solution_code, $locale, $language)
             );
             $solution->explanation_translations = $explanations;
             $solution->explanation = $explanations[$responseLanguage] ?? $explanations['ar'] ?? $explanations['en'] ?? '';
@@ -167,7 +167,7 @@ class CodeforcesSolverService
 
                 $solution->status = CodeforcesSolution::STATUS_FAILED;
                 $solution->progress_stage = CodeforcesSolution::STAGE_FAILED;
-                $solution->error_message = 'ØªØ¹Ø°Ø± Ø¥ÙƒÙ…Ø§Ù„ Ø§Ù„Ø¹Ù…Ù„ÙŠØ©. Ø­Ø§ÙˆÙ„ Ù…Ø±Ø© Ø£Ø®Ø±Ù‰.';
+                $solution->error_message = 'تعذر إكمال العملية. حاول مرة أخرى.';
                 $this->usage()->record(
                     $solution->user_id,
                     AiUsageService::FEATURE_CODEFORCES_SOLVE,
@@ -191,7 +191,7 @@ class CodeforcesSolverService
             $solution->save();
 
             $algorithmBreakdowns = $this->generateTextTranslations(
-                fn (string $locale) => $this->generateAlgorithmBreakdown($parsedJson, $solution->solution_code, $locale)
+                fn (string $locale) => $this->generateAlgorithmBreakdown($parsedJson, $solution->solution_code, $locale, $language)
             );
             $solution->algorithm_breakdown_translations = $algorithmBreakdowns;
             $solution->algorithm_breakdown = $algorithmBreakdowns[$responseLanguage] ?? $algorithmBreakdowns['ar'] ?? $algorithmBreakdowns['en'] ?? '';
@@ -527,9 +527,9 @@ class CodeforcesSolverService
         ];
     }
 
-    protected function generateExplanation(string $parsedJson, string $solutionCode, string $responseLanguage = 'ar'): string
+    protected function generateExplanation(string $parsedJson, string $solutionCode, string $responseLanguage = 'ar', string $solutionLanguage = 'python'): string
     {
-        $system = CodeforcesPrompts::generateExplanation($responseLanguage);
+        $system = CodeforcesPrompts::generateExplanation($responseLanguage, $solutionLanguage);
         $prompt = $system."\n\n<user_content>\n".$parsedJson."\n</user_content>\n\n<solution_code>\n".$solutionCode."\n</solution_code>";
 
         return trim($this->ai->generate($prompt, $this->timeout));
@@ -679,9 +679,9 @@ class CodeforcesSolverService
         return $merged;
     }
 
-    protected function generateAlgorithmBreakdown(string $parsedJson, string $solutionCode, string $responseLanguage = 'ar'): string
+    protected function generateAlgorithmBreakdown(string $parsedJson, string $solutionCode, string $responseLanguage = 'ar', string $solutionLanguage = 'python'): string
     {
-        $system = CodeforcesPrompts::generateAlgorithmBreakdown($responseLanguage);
+        $system = CodeforcesPrompts::generateAlgorithmBreakdown($responseLanguage, $solutionLanguage);
         $prompt = $system."\n\n<user_content>\n".$parsedJson."\n</user_content>\n\n<solution_code>\n".$solutionCode."\n</solution_code>";
 
         return trim($this->ai->generate($prompt, $this->timeout));

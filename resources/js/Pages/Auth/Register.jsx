@@ -3,6 +3,7 @@ import { BrainCircuit, CheckCircle2, Sparkles } from 'lucide-react';
 
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useUiLocale } from '@/lib/ui-locale';
@@ -50,7 +51,7 @@ export default function Register() {
                             </p>
                         </div>
 
-                        <div className="relative z-10 rounded-[28px] border border-[var(--app-border)] bg-slate-950/45 p-6">
+                        <Card className="relative z-10 p-6">
                             <div className="flex items-center gap-2 text-sm font-semibold text-[var(--app-foreground)]">
                                 <CheckCircle2 className="h-4 w-4 text-emerald-300" />
                                 {locale === 'ar' ? 'ما الذي ستحصل عليه؟' : 'What do you unlock?'}
@@ -60,7 +61,7 @@ export default function Register() {
                                 <li>{locale === 'ar' ? 'تصفح الموضوعات والأنماط والمسائل من واجهة واحدة.' : 'Browse topics, patterns, and problems from one interface.'}</li>
                                 <li>{locale === 'ar' ? 'انتقال من التلميح إلى الحل الكامل عند الطلب فقط.' : 'Move from hinting to full solutions only when explicitly requested.'}</li>
                             </ul>
-                        </div>
+                        </Card>
                     </section>
 
                     <section className="flex items-center justify-center px-5 py-8 sm:px-8 lg:px-12">
@@ -75,7 +76,12 @@ export default function Register() {
                                     : 'Everything stays inside the same product identity: premium landing, serious workspaces, and structured topic browsing.'}
                             </p>
 
-                            <div className="mt-8 rounded-[32px] border border-[var(--app-border)] bg-slate-950/72 p-6 shadow-[0_24px_80px_rgba(2,6,23,0.42)] sm:p-8">
+                            <Card className="mt-8 rounded-[32px] bg-slate-950/72 shadow-[0_24px_80px_rgba(2,6,23,0.42)]">
+                                <CardHeader className="sr-only">
+                                    <CardTitle>{locale === 'ar' ? 'Ø¥Ù†Ø´Ø§Ø¡ Ø­Ø³Ø§Ø¨' : 'Create account'}</CardTitle>
+                                    <CardDescription>{locale === 'ar' ? 'Ù†Ù…ÙˆØ°Ø¬ Ø¥Ù†Ø´Ø§Ø¡ Ø­Ø³Ø§Ø¨ Ø¬Ø¯ÙŠØ¯' : 'New account form'}</CardDescription>
+                                </CardHeader>
+                                <CardContent className="p-6 sm:p-8">
                                 <form
                                     className="space-y-5"
                                     onSubmit={(event) => {
@@ -118,7 +124,8 @@ export default function Register() {
                                         {locale === 'ar' ? 'سجّل الدخول' : 'Log in'}
                                     </Link>
                                 </p>
-                            </div>
+                                </CardContent>
+                            </Card>
                         </div>
                     </section>
                 </div>

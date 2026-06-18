@@ -80,6 +80,7 @@ describe('Assistant completion flow', () => {
                 }),
             }));
         vi.stubGlobal('crypto', { randomUUID: () => 'client-id' });
+        vi.stubGlobal('Echo', undefined);
     });
 
     afterEach(() => {
