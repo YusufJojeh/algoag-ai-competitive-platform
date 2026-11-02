@@ -1,5 +1,61 @@
 # ALGOAG
 
+## Status
+
+Public repo / local build — The local judge is configured for development and demo workflows.
+
+## Problem
+
+Learners need problem practice, submissions and timed contests in one workflow. Administrators need controls for hidden tests and contest-only problems without exposing them before the contest ends.
+
+## Architecture
+
+```mermaid
+flowchart LR
+  Learner --> UI["resources/js: React and Inertia"]
+  UI --> Laravel["Laravel routes and app modules"]
+  Laravel --> DB["MySQL or test SQLite"]
+  Laravel --> Judge["Local demo judge service"]
+  Laravel --> Jobs["Queue jobs and scheduler"]
+```
+
+## Key decisions
+
+- The judge defaults to a safe stub, preserving local workflows while requiring a separately operated sandbox for untrusted code.
+- Contest-only problems are published through scheduled state changes, trading immediate publication for contest integrity.
+- SQLite is used in tests while local usage supports MySQL, reducing test setup at the cost of provider differences.
+
+## Run locally
+
+```bash
+composer install
+cp .env.example .env
+php artisan key:generate
+php artisan migrate --seed
+npm install
+npm run dev
+# In another terminal, run the queue worker:
+php artisan queue:work
+```
+
+## Tests
+
+```bash
+php artisan test
+npm test
+```
+
+Count omitted: PHP and project dependencies were unavailable in this session.
+
+## Limitations
+
+- The repository's local judge is not a sandbox for untrusted code; production isolation must be separately implemented and operated.
+- AI and realtime integrations require provider and service configuration.
+
+---
+
+## Existing project documentation
+
 ALGOAG is a Laravel 12 + React/Inertia competitive programming platform for learning, solving, contests, and AI-assisted algorithm practice.
 
 ## Overview
