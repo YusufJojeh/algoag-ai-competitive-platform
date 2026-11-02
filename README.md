@@ -207,3 +207,31 @@ Add final screenshots under a separate portfolio folder or release assets:
 ## Status And License
 
 Portfolio/graduation-ready local demo project. License: MIT, as declared in `composer.json`.
+
+## Portfolio summary
+
+### Problem
+Learners need a practice platform for programming problems, contests, standings, and guided algorithm work.
+
+### Architecture
+```mermaid
+flowchart LR
+  Learner["Learner / admin"] --> Web["Laravel + React / Inertia"]
+  Web --> App["Laravel application"]
+  App --> DB["Database"]
+  App --> Judge["Python / C++ demo judge"]
+```
+
+### Key decisions
+- Keep contest and problem management in the Laravel application.
+- Run Python/C++ judging as a development demo workflow.
+- Label the project as a local demo rather than a production service.
+
+### How to run
+Follow the existing setup and testing sections in this README. No Docker-first setup is documented.
+
+### Tests
+The README documents PHPUnit, Vitest, and TypeScript compilation commands, but does not publish verified test totals.
+
+### Status
+Portfolio / graduation-ready local demo, as stated in this README.
